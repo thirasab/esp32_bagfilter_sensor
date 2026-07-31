@@ -25,15 +25,15 @@
             --status-error: #ef4444;
         }
 
-        /* --- Base Styles (Modern Viewport Units) --- */
+        /* --- Base Styles --- */
         * { box-sizing: border-box; }
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: var(--bg-body); 
             color: var(--text-main);
             margin: 0; 
-            padding: clamp(10px, 2vw, 20px);
-            height: 100dvh; /* ใช้ dvh ป้องกันจอมือถือเลื่อนแล้วเลยขอบ */
+            padding: 12px 20px;
+            height: 100dvh; 
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -44,12 +44,12 @@
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            margin-bottom: clamp(10px, 2vh, 20px);
+            margin-bottom: 10px;
             flex-shrink: 0;
         }
         h1 { 
-            margin: 0 0 6px 0; 
-            font-size: clamp(1.2rem, 2.5vw, 2rem); 
+            margin: 0 0 4px 0; 
+            font-size: 1.6rem; 
             font-weight: 700; 
             color: var(--text-main); 
             letter-spacing: -0.5px; 
@@ -57,9 +57,9 @@
         }
         
         .status-badge {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(30, 41, 59, 0.8); padding: 4px 14px; 
-            border-radius: 20px; font-size: clamp(0.75rem, 1.2vw, 0.85rem); font-weight: 600;
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(30, 41, 59, 0.8); padding: 4px 12px; 
+            border-radius: 20px; font-size: 0.8rem; font-weight: 600;
             border: 1px solid #334155;
         }
         .status-dot {
@@ -68,7 +68,7 @@
         }
         .status-dot.online {
             background-color: var(--status-ok);
-            box-shadow: 0 0 10px var(--status-ok);
+            box-shadow: 0 0 8px var(--status-ok);
             animation: pulse 2s infinite;
         }
         @keyframes pulse {
@@ -77,13 +77,13 @@
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
-        /* --- Mobile Tabs (แสดงเฉพาะจอเล็กด้วย CSS การเช็คสัดส่วน) --- */
+        /* --- Mobile Tabs --- */
         .mobile-tabs {
-            display: none; /* ซ่อนค่าเริ่มต้น */
+            display: none;
             background: var(--bg-card);
             border-radius: 12px;
             padding: 4px;
-            margin: 0 auto 15px auto;
+            margin: 0 auto 10px auto;
             width: 100%;
             max-width: 500px;
             gap: 6px;
@@ -96,23 +96,24 @@
         }
         .tab-btn.active { background: var(--accent-blue); color: var(--bg-body); }
 
-        /* --- Modern Layout Grid (Auto-Fit & Subgrid concepts) --- */
+        /* --- Modern Layout Grid --- */
         .dashboard-grid {
             display: grid; 
-            gap: clamp(12px, 1.5vw, 20px);
+            gap: 16px;
             max-width: 1600px; 
             margin: 0 auto;
             width: 100%;
             flex-grow: 1;
             min-height: 0;
-            grid-template-columns: minmax(300px, 350px) minmax(0, 1fr);
-            grid-template-rows: 350px minmax(0, 1fr);
+            /* ปรับความสูงแถวบนให้กระชับขึ้น (300px) เพื่อให้แถวล่างมีพื้นที่แสดงกราฟมากขึ้น */
+            grid-template-columns: 330px minmax(0, 1fr);
+            grid-template-rows: 290px minmax(0, 1fr);
         }
         
         .card {
             background: var(--bg-card); 
             border-radius: 16px; 
-            padding: clamp(16px, 2vw, 24px);
+            padding: 18px 20px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.05);
             display: flex; 
@@ -121,12 +122,12 @@
         }
 
         .card-header {
-            font-size: clamp(0.9rem, 1.2vw, 1.1rem); 
+            font-size: 0.95rem; 
             font-weight: 600; 
             color: var(--text-muted);
-            margin-bottom: 12px; 
+            margin-bottom: 10px; 
             border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 8px; 
+            padding-bottom: 6px; 
             text-transform: uppercase; 
             letter-spacing: 1px;
             flex-shrink: 0;
@@ -142,11 +143,11 @@
 
         .full-width { grid-column: 1 / -1; }
 
-        /* --- Modern Media Queries (Mobile Viewport Adaptive) --- */
+        /* --- Responsive Media Queries --- */
         @media (max-width: 1023px) {
             .mobile-tabs { display: flex; }
             .dashboard-grid {
-                display: flex; /* เปลี่ยนเป็น Flex เพื่อสลับหน้าจอ Tab บนมือถือ */
+                display: flex;
                 flex-direction: column;
             }
             .card { display: none; }
@@ -177,7 +178,7 @@
             <div class="card-header">Main Header Pressure</div>
             <div class="gauge-container">
                 <canvas id="av-gauge" data-type="radial-gauge"
-                    data-width="240" data-height="240"
+                    data-width="210" data-height="210"
                     data-units="Bar" data-title="AV"
                     data-min-value="0" data-max-value="10"
                     data-major-ticks="0,2,4,6,8,10"
