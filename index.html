@@ -36,7 +36,7 @@
         
         /* --- Header & Status --- */
         .header-container {
-            display: flex; flex-direction: column; align-items: center; margin-bottom: 30px;
+            display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;
         }
         h1 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; text-align: center; }
         
@@ -61,16 +61,51 @@
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
-        /* --- Layout Grid --- */
+        /* --- Mobile Tabs (แสดงเฉพาะในจอมือถือ) --- */
+        .mobile-tabs {
+            display: flex;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 6px;
+            margin: 0 auto 20px auto;
+            max-width: 600px;
+            gap: 6px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            background: var(--accent-blue);
+            color: var(--bg-body);
+        }
+
+        /* --- Layout Grid & Cards --- */
         .dashboard-grid {
             display: grid; gap: 20px;
             max-width: 1400px; margin: 0 auto;
         }
+        
         .card {
             background: var(--bg-card); border-radius: 16px; padding: 24px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.05);
+            /* ซ่อน Card ทั้งหมดไว้ก่อนในจอมือถือ */
+            display: none; 
         }
+        /* แสดงเฉพาะ Card ที่มีคลาส active */
+        .card.active {
+            display: block;
+        }
+
         .card-header {
             font-size: 1.1rem; font-weight: 600; color: var(--text-muted);
             margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
@@ -81,8 +116,14 @@
         .chart-container { position: relative; height: 300px; width: 100%; }
         .history-container { position: relative; height: 400px; width: 100%; }
 
-        /* --- Responsive Breakpoints --- */
+        /* --- Responsive Breakpoints (จอคอม) --- */
         @media (min-width: 1024px) {
+            .mobile-tabs {
+                display: none; /* ซ่อน Tab ทิ้งไปเลยเมื่อเป็นหน้าจอใหญ่ */
+            }
+            .card {
+                display: block !important; /* บังคับแสดง Card ทั้งหมดโดยไม่ต้องสนคลาส active */
+            }
             .dashboard-grid {
                 grid-template-columns: 350px 1fr; /* แบ่ง 2 คอลัมน์ (เกจจ์ซ้าย บาร์ขวา) */
             }
@@ -100,9 +141,16 @@
         </div>
     </div>
 
+    <!-- ส่วนของ Mobile Tabs -->
+    <div class="mobile-tabs">
+        <button class="tab-btn active" onclick="switchTab('card-gauge')">Gauge</button>
+        <button class="tab-btn" onclick="switchTab('card-live')">Live Node</button>
+        <button class="tab-btn" onclick="switchTab('card-history')">48H Trend</button>
+    </div>
+
     <div class="dashboard-grid">
-        <!-- Card 1: Gauge (Live AV) -->
-        <div class="card">
+        <!-- Card 1: Gauge (Live AV) - ใส่ id และคลาส active เริ่มต้น -->
+        <div class="card active" id="card-gauge">
             <div class="card-header">Main Header Pressure</div>
             <div class="gauge-container">
                 <canvas id="av-gauge" data-type="radial-gauge"
@@ -122,16 +170,16 @@
             </div>
         </div>
 
-        <!-- Card 2: Live Bar Chart (P1-P8) -->
-        <div class="card">
+        <!-- Card 2: Live Bar Chart (P1-P8) - ใส่ id -->
+        <div class="card" id="card-live">
             <div class="card-header">Live Node Status</div>
             <div class="chart-container">
                 <canvas id="liveBarChart"></canvas>
             </div>
         </div>
 
-        <!-- Card 3: History Line Chart (48 Hours) -->
-        <div class="card full-width">
+        <!-- Card 3: History Line Chart (48 Hours) - ใส่ id -->
+        <div class="card full-width" id="card-history">
             <div class="card-header">48-Hour Trend (Sync: 30 Mins)</div>
             <div class="history-container">
                 <canvas id="historyChart"></canvas>
@@ -140,13 +188,30 @@
     </div>
 
     <script>
-        // ตั้งค่า Font และสีพื้นฐานของ Chart.js
+        // ==========================================
+        // ฟังก์ชันสำหรับจัดการ Mobile Tabs
+        // ==========================================
+        function switchTab(targetCardId) {
+            // ถอดคลาส active จากปุ่ม Tab และ Card ทั้งหมด
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
+
+            // เติมคลาส active ให้ปุ่มที่ถูกกด และ Card ที่ตรงกัน
+            event.currentTarget.classList.add('active');
+            document.getElementById(targetCardId).classList.add('active');
+
+            // ทริคสำคัญ: บังคับให้ Chart.js อัปเดตขนาดตัวเองใหม่ (กันกราฟพังตอนแสดงผลจาก display:none)
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+            }, 50);
+        }
+
+        // ==========================================
+        // การตั้งค่าทั่วไป
+        // ==========================================
         Chart.defaults.font.family = "'Inter', sans-serif";
         Chart.defaults.color = '#94a3b8';
 
-        // ==========================================
-        // 1. ตั้งค่ากราฟแท่ง (Live Bar Chart)
-        // ==========================================
         const liveCtx = document.getElementById('liveBarChart').getContext('2d');
         const liveBarChart = new Chart(liveCtx, {
             type: 'bar',
@@ -176,7 +241,7 @@
         });
 
         // ==========================================
-        // 2. ส่วนของการเชื่อมต่อ MQTT (Real-time)
+        // การเชื่อมต่อ MQTT (Real-time)
         // ==========================================
         const broker = "4d79d42984154e37aab32ca068370f40.s1.eu.hivemq.cloud";
         const port = 8884; 
@@ -192,7 +257,6 @@
         client.onConnectionLost = function(responseObject) {
             mqttDot.classList.remove("online");
             mqttText.innerText = "Disconnected";
-            // พยายามเชื่อมต่อใหม่ทุกๆ 5 วินาทีหากหลุด
             setTimeout(connectMQTT, 5000);
         };
 
@@ -200,13 +264,9 @@
             try {
                 const data = JSON.parse(message.payloadString);
                 
-                // อัปเดตเข็ม AV
                 document.getElementById('av-gauge').setAttribute('data-value', data.av.toFixed(2));
                 
-                // อัปเดตข้อมูลกราฟแท่ง
                 liveBarChart.data.datasets[0].data = [data.p1, data.p2, data.p3, data.p4, data.p5, data.p6, data.p7, data.p8];
-                
-                // ไฮไลท์กราฟแท่งเป็นสีแดง ถ้าความดันจุดนั้นตกต่ำกว่า 4 Bar
                 liveBarChart.data.datasets[0].backgroundColor = liveBarChart.data.datasets[0].data.map(val => val < 4 ? '#ef4444' : '#38bdf8');
                 liveBarChart.update();
             } catch(e) {
@@ -228,11 +288,10 @@
                 }
             });
         }
-        // สั่งให้เริ่มเชื่อมต่อ MQTT ทันที
         connectMQTT();
 
         // ==========================================
-        // 3. ส่วนของการดึงข้อมูล Google Sheet (Historical 48H)
+        // การดึงข้อมูล Google Sheet (Historical 48H)
         // ==========================================
         const gasURL = "https://script.google.com/macros/s/AKfycbwkMTHj9lhFm79HaQTtLE4tC77O1ILsmazRb6s5tPdamXZct9hlC7sEwc9Xb3l4XydN/exec";
 
@@ -242,7 +301,6 @@
                 const data = await response.json();
                 
                 const labels = data.map(row => row.time);
-                // ชุดสีสำหรับเส้นกราฟทั้ง 8 เส้น
                 const colors = ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#2dd4bf', '#38bdf8', '#818cf8', '#e879f9'];
                 
                 const datasets = [];
@@ -252,9 +310,9 @@
                         data: data.map(row => row[`p${i}`]),
                         borderColor: colors[i-1],
                         borderWidth: 2,
-                        pointRadius: 0, // ซ่อนจุดบนเส้นเพื่อให้ดูกลืนตา ไม่รก
+                        pointRadius: 0,
                         pointHoverRadius: 5,
-                        tension: 0.4 // ปรับเส้นกราฟให้มีความโค้งมน
+                        tension: 0.4
                     });
                 }
 
@@ -283,7 +341,6 @@
             }
         }
         
-        // สั่งให้ดึงกราฟจาก Google Sheet ตอนเปิดหน้าเว็บ
         fetchHistoricalData(); 
     </script>
 </body>
