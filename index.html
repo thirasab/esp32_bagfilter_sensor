@@ -2,98 +2,114 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Modern Bag Filter Dashboard</title>
     
-    <!-- นำเข้าฟอนต์ Inter จาก Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     
-    <!-- ไลบรารีที่จำเป็น -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.rawgit.com/Mikhus/canvas-gauges/gh-pages/download/2.1.7/radial/gauge.min.js"></script>
 
     <style>
-        /* --- Color Palette & Variables --- */
+        /* --- Color Palette --- */
         :root {
-            --bg-body: #0f172a;
-            --bg-card: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-blue: #38bdf8;
-            --status-ok: #10b981;
-            --status-error: #ef4444;
+            --bg-body: #0f172a; --bg-card: #1e293b; --text-main: #f8fafc;
+            --text-muted: #94a3b8; --status-ok: #10b981; --status-error: #ef4444;
         }
 
-        /* --- Base Styles --- */
+        /* --- Base: บังคับหน้าเดียว ห้าม Scroll --- */
         * { box-sizing: border-box; }
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: var(--bg-body); 
-            color: var(--text-main);
-            margin: 0; padding: 20px;
+            background-color: var(--bg-body); color: var(--text-main);
+            margin: 0; padding: 8px; /* ขอบจอเล็กสุด */
+            height: 100dvh; /* บังคับความสูงเท่าหน้าจอเป๊ะ (รองรับ Safari มือถือ) */
+            width: 100vw;
+            overflow: hidden; /* ห้ามเลื่อนจอ */
+            display: flex; flex-direction: column;
         }
         
-        /* --- Header & Status --- */
+        /* --- Header --- */
         .header-container {
-            display: flex; flex-direction: column; align-items: center; margin-bottom: 30px;
+            flex: 0 0 auto; /* ไม่ยืดหด */
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 8px; padding: 0 5px;
         }
-        h1 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; text-align: center; }
+        h1 { margin: 0; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.5px; }
         
         .status-badge {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(30, 41, 59, 0.8); padding: 6px 16px; 
-            border-radius: 20px; font-size: 0.85rem; font-weight: 600;
-            border: 1px solid #334155;
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(30, 41, 59, 0.8); padding: 4px 10px; 
+            border-radius: 20px; font-size: 0.75rem; font-weight: 600;
         }
-        .status-dot {
-            width: 10px; height: 10px; border-radius: 50%;
-            background-color: var(--status-error);
-        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--status-error); }
         .status-dot.online {
             background-color: var(--status-ok);
-            box-shadow: 0 0 10px var(--status-ok);
+            box-shadow: 0 0 8px var(--status-ok);
             animation: pulse 2s infinite;
         }
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            70% { box-shadow: 0 0 0 5px rgba(16, 185, 129, 0); }
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
-        /* --- Layout Grid --- */
+        /* --- Layout Grid สำหรับมือถือ --- */
         .dashboard-grid {
-            display: grid; gap: 20px;
-            max-width: 1400px; margin: 0 auto;
+            flex: 1 1 0; /* กินพื้นที่ที่เหลือทั้งหมด */
+            display: grid; 
+            grid-template-columns: 1fr 1.2fr; /* ซ้ายเกจจ์ 1 ส่วน, ขวากราฟแท่ง 1.2 ส่วน */
+            grid-template-rows: 35% 65%;      /* ครึ่งบน 35%, ครึ่งล่าง(กราฟเส้น) 65% */
+            gap: 8px;
+            min-height: 0; /* ป้องกันการดันทะลุจอ */
         }
         .card {
-            background: var(--bg-card); border-radius: 16px; padding: 24px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            background: var(--bg-card); border-radius: 12px; padding: 8px;
+            display: flex; flex-direction: column;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
+        .full-width { grid-column: 1 / -1; } /* รวมคอลัมน์ให้เต็มจอ */
+        
         .card-header {
-            font-size: 1.1rem; font-weight: 600; color: var(--text-muted);
-            margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;
+            font-size: 0.7rem; font-weight: 600; color: var(--text-muted);
+            margin-bottom: 5px; text-transform: uppercase; white-space: nowrap;
+            flex: 0 0 auto;
         }
 
-        .gauge-container { display: flex; justify-content: center; }
-        .chart-container { position: relative; height: 300px; width: 100%; }
-        .history-container { position: relative; height: 400px; width: 100%; }
+        /* --- Containers --- */
+        .gauge-container { flex: 1; display: flex; justify-content: center; align-items: center; min-height: 0; }
+        
+        /* ทริค: ย่อ Canvas Gauge ให้พอดีกรอบอัตโนมัติ */
+        .gauge-container canvas {
+            width: 100% !important; height: 100% !important;
+            max-width: 180px; max-height: 180px;
+            object-fit: contain;
+        }
+        
+        .chart-container, .history-container {
+            flex: 1; position: relative; min-height: 0; width: 100%;
+        }
 
-        /* --- Responsive Breakpoints --- */
-        @media (min-width: 1024px) {
+        /* --- สำหรับจอคอมพิวเตอร์ (ปรับให้กว้างขึ้น) --- */
+        @media (min-width: 768px) {
+            body { padding: 20px; }
+            .header-container { flex-direction: column; gap: 10px; margin-bottom: 20px; }
+            h1 { font-size: 2rem; }
             .dashboard-grid {
-                grid-template-columns: 350px 1fr; /* แบ่ง 2 คอลัมน์ (เกจจ์ซ้าย บาร์ขวา) */
+                grid-template-columns: 300px 1fr;
+                grid-template-rows: 300px 1fr;
+                gap: 20px; max-width: 1400px; margin: 0 auto;
             }
-            .full-width { grid-column: 1 / -1; }
+            .card { padding: 20px; }
+            .card-header { font-size: 1rem; margin-bottom: 15px; }
         }
     </style>
 </head>
 <body>
 
     <div class="header-container">
-        <h1>Bag Filter Purge Monitor</h1>
+        <h1>Bag Filter Monitor</h1> <!-- ย่อชื่อให้สั้นลงสำหรับมือถือ -->
         <div class="status-badge" id="mqtt-badge">
             <div class="status-dot" id="mqtt-dot"></div>
             <span id="mqtt-text">Connecting...</span>
@@ -101,17 +117,17 @@
     </div>
 
     <div class="dashboard-grid">
-        <!-- Card 1: Gauge (Live AV) -->
+        <!-- Card 1: Gauge (ซ้ายบน) -->
         <div class="card">
-            <div class="card-header">Main Header Pressure</div>
+            <div class="card-header">Main (Bar)</div>
             <div class="gauge-container">
+                <!-- วาดที่ 200px แล้วปล่อยให้ CSS ย่อขนาดลงให้พอดีจอเอง -->
                 <canvas id="av-gauge" data-type="radial-gauge"
-                    data-width="260" data-height="260"
+                    data-width="200" data-height="200"
                     data-units="Bar" data-title="AV"
                     data-min-value="0" data-max-value="10"
                     data-major-ticks="0,2,4,6,8,10"
-                    data-minor-ticks="2"
-                    data-stroke-ticks="true"
+                    data-minor-ticks="2" data-stroke-ticks="true"
                     data-highlights='[ {"from": 0, "to": 3, "color": "rgba(239, 68, 68, .3)"}, {"from": 3, "to": 7, "color": "rgba(16, 185, 129, .2)"}, {"from": 7, "to": 10, "color": "rgba(245, 158, 11, .3)"} ]'
                     data-color-plate="transparent"
                     data-color-major-ticks="#94a3b8" data-color-minor-ticks="#94a3b8"
@@ -122,17 +138,17 @@
             </div>
         </div>
 
-        <!-- Card 2: Live Bar Chart (P1-P8) -->
+        <!-- Card 2: Live Bar Chart (ขวาบน) -->
         <div class="card">
-            <div class="card-header">Live Node Status</div>
+            <div class="card-header">Live Node</div>
             <div class="chart-container">
                 <canvas id="liveBarChart"></canvas>
             </div>
         </div>
 
-        <!-- Card 3: History Line Chart (48 Hours) -->
+        <!-- Card 3: History Line Chart (ล่าง เต็มจอ) -->
         <div class="card full-width">
-            <div class="card-header">48-Hour Trend (Sync: 30 Mins)</div>
+            <div class="card-header">48-H Trend (30M Sync)</div>
             <div class="history-container">
                 <canvas id="historyChart"></canvas>
             </div>
@@ -140,9 +156,10 @@
     </div>
 
     <script>
-        // ตั้งค่า Font และสีพื้นฐานของ Chart.js
+        // ปรับฟอนต์พื้นฐานให้เล็กลงสำหรับจอมือถือ
         Chart.defaults.font.family = "'Inter', sans-serif";
         Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.size = 9; 
 
         // ==========================================
         // 1. ตั้งค่ากราฟแท่ง (Live Bar Chart)
@@ -154,34 +171,31 @@
                 labels: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'],
                 datasets: [{
                     data: [0, 0, 0, 0, 0, 0, 0, 0],
-                    backgroundColor: '#38bdf8', 
-                    borderRadius: 6, 
-                    borderSkipped: false,
-                    barPercentage: 0.6
+                    backgroundColor: '#38bdf8', borderRadius: 4, barPercentage: 0.8
                 }]
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
                 animation: { duration: 250 },
                 scales: {
-                    x: { grid: { display: false, drawBorder: false } }, 
+                    x: { grid: { display: false, drawBorder: false }, ticks: { font: { size: 8 } } }, 
                     y: { 
                         beginAtZero: true, max: 10,
-                        grid: { color: 'rgba(255, 255, 255, 0.05)', borderDash: [5, 5] },
-                        title: { display: true, text: 'Bar', color: '#64748b' }
+                        grid: { color: 'rgba(255, 255, 255, 0.05)', borderDash: [2, 4] },
+                        ticks: { stepSize: 2 } // ให้ตัวเลขแกน Y กระโดดทีละ 2 ประหยัดพื้นที่
                     }
                 },
-                plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } }
+                plugins: { legend: { display: false }, tooltip: { enabled: false } }
             }
         });
 
         // ==========================================
-        // 2. ส่วนของการเชื่อมต่อ MQTT (Real-time)
+        // 2. ส่วนของการเชื่อมต่อ MQTT
         // ==========================================
         const broker = "4d79d42984154e37aab32ca068370f40.s1.eu.hivemq.cloud";
         const port = 8884; 
         const topic = "factory/bagfilter/pressures";
-        const clientId = "WebClient-" + Math.random().toString(16).substr(2, 8);
+        const clientId = "Web-" + Math.random().toString(16).substr(2, 6);
         const mqtt_user = "esp32_bagfilter_sensor";
         const mqtt_password = "Mcl195088";
 
@@ -189,29 +203,20 @@
         const mqttDot = document.getElementById("mqtt-dot");
         const mqttText = document.getElementById("mqtt-text");
 
-        client.onConnectionLost = function(responseObject) {
+        client.onConnectionLost = function() {
             mqttDot.classList.remove("online");
-            mqttText.innerText = "Disconnected";
-            // พยายามเชื่อมต่อใหม่ทุกๆ 5 วินาทีหากหลุด
+            mqttText.innerText = "Offline";
             setTimeout(connectMQTT, 5000);
         };
 
         client.onMessageArrived = function(message) {
             try {
                 const data = JSON.parse(message.payloadString);
-                
-                // อัปเดตเข็ม AV
                 document.getElementById('av-gauge').setAttribute('data-value', data.av.toFixed(2));
-                
-                // อัปเดตข้อมูลกราฟแท่ง
                 liveBarChart.data.datasets[0].data = [data.p1, data.p2, data.p3, data.p4, data.p5, data.p6, data.p7, data.p8];
-                
-                // ไฮไลท์กราฟแท่งเป็นสีแดง ถ้าความดันจุดนั้นตกต่ำกว่า 4 Bar
                 liveBarChart.data.datasets[0].backgroundColor = liveBarChart.data.datasets[0].data.map(val => val < 4 ? '#ef4444' : '#38bdf8');
                 liveBarChart.update();
-            } catch(e) {
-                console.log("JSON Parse Error: ", e);
-            }
+            } catch(e) {}
         };
 
         function connectMQTT() {
@@ -219,20 +224,16 @@
                 userName: mqtt_user, password: mqtt_password, useSSL: true,
                 onSuccess: function() {
                     mqttDot.classList.add("online");
-                    mqttText.innerText = "Live Connected";
+                    mqttText.innerText = "Live";
                     client.subscribe(topic);
                 },
-                onFailure: function(message) {
-                    console.log("MQTT Connection failed: " + message.errorMessage);
-                    setTimeout(connectMQTT, 5000);
-                }
+                onFailure: function() { setTimeout(connectMQTT, 5000); }
             });
         }
-        // สั่งให้เริ่มเชื่อมต่อ MQTT ทันที
         connectMQTT();
 
         // ==========================================
-        // 3. ส่วนของการดึงข้อมูล Google Sheet (Historical 48H)
+        // 3. ส่วนของการดึงข้อมูล Google Sheet
         // ==========================================
         const gasURL = "https://script.google.com/macros/s/AKfycbwkMTHj9lhFm79HaQTtLE4tC77O1ILsmazRb6s5tPdamXZct9hlC7sEwc9Xb3l4XydN/exec";
 
@@ -242,19 +243,14 @@
                 const data = await response.json();
                 
                 const labels = data.map(row => row.time);
-                // ชุดสีสำหรับเส้นกราฟทั้ง 8 เส้น
                 const colors = ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#2dd4bf', '#38bdf8', '#818cf8', '#e879f9'];
                 
                 const datasets = [];
                 for(let i=1; i<=8; i++) {
                     datasets.push({
-                        label: `P${i}`,
-                        data: data.map(row => row[`p${i}`]),
-                        borderColor: colors[i-1],
-                        borderWidth: 2,
-                        pointRadius: 0, // ซ่อนจุดบนเส้นเพื่อให้ดูกลืนตา ไม่รก
-                        pointHoverRadius: 5,
-                        tension: 0.4 // ปรับเส้นกราฟให้มีความโค้งมน
+                        label: `P${i}`, data: data.map(row => row[`p${i}`]),
+                        borderColor: colors[i-1], borderWidth: 1.5,
+                        pointRadius: 0, pointHoverRadius: 4, tension: 0.3
                     });
                 }
 
@@ -270,20 +266,20 @@
                             y: { 
                                 min: 0, max: 10,
                                 grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                                title: { display: true, text: 'Pressure (Bar)' }
+                                ticks: { stepSize: 2 }
                             }
                         },
                         plugins: { 
-                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } 
+                            legend: { 
+                                position: 'top', 
+                                labels: { usePointStyle: true, boxWidth: 6, padding: 8 } 
+                            } 
                         }
                     }
                 });
-            } catch (error) { 
-                console.error('Error fetching Google Sheets data:', error); 
-            }
+            } catch (error) { console.log('Error:', error); }
         }
         
-        // สั่งให้ดึงกราฟจาก Google Sheet ตอนเปิดหน้าเว็บ
         fetchHistoricalData(); 
     </script>
 </body>
