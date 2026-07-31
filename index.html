@@ -25,29 +25,45 @@
             --status-error: #ef4444;
         }
 
-        /* --- Base Styles --- */
+        /* --- Base Styles (Modern Viewport Units) --- */
         * { box-sizing: border-box; }
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: var(--bg-body); 
             color: var(--text-main);
-            margin: 0; padding: 20px;
+            margin: 0; 
+            padding: clamp(10px, 2vw, 20px);
+            height: 100dvh; /* ใช้ dvh ป้องกันจอมือถือเลื่อนแล้วเลยขอบ */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
         
         /* --- Header & Status --- */
         .header-container {
-            display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin-bottom: clamp(10px, 2vh, 20px);
+            flex-shrink: 0;
         }
-        h1 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; text-align: center; }
+        h1 { 
+            margin: 0 0 6px 0; 
+            font-size: clamp(1.2rem, 2.5vw, 2rem); 
+            font-weight: 700; 
+            color: var(--text-main); 
+            letter-spacing: -0.5px; 
+            text-align: center; 
+        }
         
         .status-badge {
             display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(30, 41, 59, 0.8); padding: 6px 16px; 
-            border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+            background: rgba(30, 41, 59, 0.8); padding: 4px 14px; 
+            border-radius: 20px; font-size: clamp(0.75rem, 1.2vw, 0.85rem); font-weight: 600;
             border: 1px solid #334155;
         }
         .status-dot {
-            width: 10px; height: 10px; border-radius: 50%;
+            width: 8px; height: 8px; border-radius: 50%;
             background-color: var(--status-error);
         }
         .status-dot.online {
@@ -61,73 +77,80 @@
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
-        /* --- Mobile Tabs (แสดงเฉพาะในจอมือถือ) --- */
+        /* --- Mobile Tabs (แสดงเฉพาะจอเล็กด้วย CSS การเช็คสัดส่วน) --- */
         .mobile-tabs {
-            display: flex;
+            display: none; /* ซ่อนค่าเริ่มต้น */
             background: var(--bg-card);
             border-radius: 12px;
-            padding: 6px;
-            margin: 0 auto 20px auto;
-            max-width: 600px;
+            padding: 4px;
+            margin: 0 auto 15px auto;
+            width: 100%;
+            max-width: 500px;
             gap: 6px;
+            flex-shrink: 0;
         }
         .tab-btn {
-            flex: 1;
-            padding: 10px;
-            background: transparent;
-            border: none;
-            border-radius: 8px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
+            flex: 1; padding: 8px; background: transparent; border: none;
+            border-radius: 8px; color: var(--text-muted); font-size: 0.85rem;
+            font-weight: 600; cursor: pointer; transition: all 0.2s ease;
         }
-        .tab-btn.active {
-            background: var(--accent-blue);
-            color: var(--bg-body);
-        }
+        .tab-btn.active { background: var(--accent-blue); color: var(--bg-body); }
 
-        /* --- Layout Grid & Cards --- */
+        /* --- Modern Layout Grid (Auto-Fit & Subgrid concepts) --- */
         .dashboard-grid {
-            display: grid; gap: 20px;
-            max-width: 1400px; margin: 0 auto;
+            display: grid; 
+            gap: clamp(12px, 1.5vw, 20px);
+            max-width: 1600px; 
+            margin: 0 auto;
+            width: 100%;
+            flex-grow: 1;
+            min-height: 0;
+            grid-template-columns: minmax(300px, 350px) minmax(0, 1fr);
+            grid-template-rows: 350px minmax(0, 1fr);
         }
         
         .card {
-            background: var(--bg-card); border-radius: 16px; padding: 24px;
+            background: var(--bg-card); 
+            border-radius: 16px; 
+            padding: clamp(16px, 2vw, 24px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            /* ซ่อน Card ทั้งหมดไว้ก่อนในจอมือถือ */
-            display: none; 
-        }
-        /* แสดงเฉพาะ Card ที่มีคลาส active */
-        .card.active {
-            display: block;
+            display: flex; 
+            flex-direction: column;
+            min-height: 0;
         }
 
         .card-header {
-            font-size: 1.1rem; font-weight: 600; color: var(--text-muted);
-            margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;
+            font-size: clamp(0.9rem, 1.2vw, 1.1rem); 
+            font-weight: 600; 
+            color: var(--text-muted);
+            margin-bottom: 12px; 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 8px; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            flex-shrink: 0;
         }
 
-        .gauge-container { display: flex; justify-content: center; }
-        .chart-container { position: relative; height: 300px; width: 100%; }
-        .history-container { position: relative; height: 400px; width: 100%; }
+        .gauge-container { 
+            display: flex; justify-content: center; align-items: center; flex-grow: 1; 
+        }
+        
+        .chart-container, .history-container { 
+            position: relative; width: 100%; flex-grow: 1; min-height: 0; 
+        }
 
-        /* --- Responsive Breakpoints (จอคอม) --- */
-        @media (min-width: 1024px) {
-            .mobile-tabs {
-                display: none; /* ซ่อน Tab ทิ้งไปเลยเมื่อเป็นหน้าจอใหญ่ */
-            }
-            .card {
-                display: block !important; /* บังคับแสดง Card ทั้งหมดโดยไม่ต้องสนคลาส active */
-            }
+        .full-width { grid-column: 1 / -1; }
+
+        /* --- Modern Media Queries (Mobile Viewport Adaptive) --- */
+        @media (max-width: 1023px) {
+            .mobile-tabs { display: flex; }
             .dashboard-grid {
-                grid-template-columns: 350px 1fr; /* แบ่ง 2 คอลัมน์ (เกจจ์ซ้าย บาร์ขวา) */
+                display: flex; /* เปลี่ยนเป็น Flex เพื่อสลับหน้าจอ Tab บนมือถือ */
+                flex-direction: column;
             }
-            .full-width { grid-column: 1 / -1; }
+            .card { display: none; }
+            .card.active { display: flex; flex-grow: 1; }
         }
     </style>
 </head>
@@ -149,12 +172,12 @@
     </div>
 
     <div class="dashboard-grid">
-        <!-- Card 1: Gauge (Live AV) - ใส่ id และคลาส active เริ่มต้น -->
+        <!-- Card 1: Gauge (Live AV) -->
         <div class="card active" id="card-gauge">
             <div class="card-header">Main Header Pressure</div>
             <div class="gauge-container">
                 <canvas id="av-gauge" data-type="radial-gauge"
-                    data-width="260" data-height="260"
+                    data-width="240" data-height="240"
                     data-units="Bar" data-title="AV"
                     data-min-value="0" data-max-value="10"
                     data-major-ticks="0,2,4,6,8,10"
@@ -170,7 +193,7 @@
             </div>
         </div>
 
-        <!-- Card 2: Live Bar Chart (P1-P8) - ใส่ id -->
+        <!-- Card 2: Live Bar Chart (P1-P8) -->
         <div class="card" id="card-live">
             <div class="card-header">Live Node Status</div>
             <div class="chart-container">
@@ -178,7 +201,7 @@
             </div>
         </div>
 
-        <!-- Card 3: History Line Chart (48 Hours) - ใส่ id -->
+        <!-- Card 3: History Line Chart (48 Hours) -->
         <div class="card full-width" id="card-history">
             <div class="card-header">48-Hour Trend (Sync: 30 Mins)</div>
             <div class="history-container">
@@ -188,27 +211,18 @@
     </div>
 
     <script>
-        // ==========================================
-        // ฟังก์ชันสำหรับจัดการ Mobile Tabs
-        // ==========================================
         function switchTab(targetCardId) {
-            // ถอดคลาส active จากปุ่ม Tab และ Card ทั้งหมด
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
 
-            // เติมคลาส active ให้ปุ่มที่ถูกกด และ Card ที่ตรงกัน
             event.currentTarget.classList.add('active');
             document.getElementById(targetCardId).classList.add('active');
 
-            // ทริคสำคัญ: บังคับให้ Chart.js อัปเดตขนาดตัวเองใหม่ (กันกราฟพังตอนแสดงผลจาก display:none)
             setTimeout(() => {
                 window.dispatchEvent(new Event('resize'));
             }, 50);
         }
 
-        // ==========================================
-        // การตั้งค่าทั่วไป
-        // ==========================================
         Chart.defaults.font.family = "'Inter', sans-serif";
         Chart.defaults.color = '#94a3b8';
 
@@ -240,9 +254,6 @@
             }
         });
 
-        // ==========================================
-        // การเชื่อมต่อ MQTT (Real-time)
-        // ==========================================
         const broker = "4d79d42984154e37aab32ca068370f40.s1.eu.hivemq.cloud";
         const port = 8884; 
         const topic = "factory/bagfilter/pressures";
@@ -263,9 +274,7 @@
         client.onMessageArrived = function(message) {
             try {
                 const data = JSON.parse(message.payloadString);
-                
                 document.getElementById('av-gauge').setAttribute('data-value', data.av.toFixed(2));
-                
                 liveBarChart.data.datasets[0].data = [data.p1, data.p2, data.p3, data.p4, data.p5, data.p6, data.p7, data.p8];
                 liveBarChart.data.datasets[0].backgroundColor = liveBarChart.data.datasets[0].data.map(val => val < 4 ? '#ef4444' : '#38bdf8');
                 liveBarChart.update();
@@ -290,9 +299,6 @@
         }
         connectMQTT();
 
-        // ==========================================
-        // การดึงข้อมูล Google Sheet (Historical 48H)
-        // ==========================================
         const gasURL = "https://script.google.com/macros/s/AKfycbwkMTHj9lhFm79HaQTtLE4tC77O1ILsmazRb6s5tPdamXZct9hlC7sEwc9Xb3l4XydN/exec";
 
         async function fetchHistoricalData() {
