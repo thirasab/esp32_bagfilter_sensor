@@ -174,15 +174,23 @@
                     backgroundColor: '#38bdf8', borderRadius: 4, barPercentage: 0.8
                 }]
             },
-            options: {
+  options: {
                 responsive: true, maintainAspectRatio: false,
                 animation: { duration: 250 },
+                layout: { padding: { right: 10 } }, // เพิ่มระยะขอบขวา ป้องกัน P8 ตกขอบจอ
                 scales: {
-                    x: { grid: { display: false, drawBorder: false }, ticks: { font: { size: 8 } } }, 
+                    x: { 
+                        grid: { display: false, drawBorder: false }, 
+                        ticks: { 
+                            font: { size: 8 },
+                            autoSkip: false, // บังคับให้แสดง Label ครบทุกตัว ห้ามซ่อน
+                            maxRotation: 0   // บังคับให้ตัวหนังสือวางแนวนอน ไม่ต้องเอียง
+                        } 
+                    }, 
                     y: { 
                         beginAtZero: true, max: 10,
                         grid: { color: 'rgba(255, 255, 255, 0.05)', borderDash: [2, 4] },
-                        ticks: { stepSize: 2 } // ให้ตัวเลขแกน Y กระโดดทีละ 2 ประหยัดพื้นที่
+                        ticks: { stepSize: 2 } 
                     }
                 },
                 plugins: { legend: { display: false }, tooltip: { enabled: false } }
