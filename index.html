@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,7 +7,7 @@
     
     <!-- ไลบรารีสำหรับ MQTT -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
-    <!-- ไลบรารีสำหรับวาดกราฟเส้น (Historical) -->
+    <!-- ไลบรารีสำหรับวาดกราฟเส้นและกราฟแท่ง (Chart.js) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- ไลบรารีสำหรับหน้าปัด Gauge (Real-time) -->
     <script src="https://cdn.rawgit.com/Mikhus/canvas-gauges/gh-pages/download/2.1.7/radial/gauge.min.js"></script>
@@ -20,7 +19,9 @@
             color: #ffffff;
             margin: 0; padding: 20px;
         }
-        h1 { text-align: center; color: #4db8ff; }
+        h1 { text-align: center; color: #4db8ff; margin-bottom: 5px; }
+        #mqtt-status { text-align: center; font-size: 0.9em; margin-bottom: 20px; color: #ff4d4d; }
+        
         .dashboard {
             display: flex; flex-wrap: wrap; justify-content: center; gap: 20px;
         }
@@ -29,18 +30,10 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.3); text-align: center;
         }
         .gauge-card { flex: 1 1 300px; max-width: 400px; }
-        .values-card { flex: 2 1 500px; }
-        .chart-card { flex: 1 1 100%; max-width: 1000px; margin: 0 auto; margin-top: 20px; }
+        .values-card { flex: 2 1 500px; max-width: 700px; }
+        .chart-card { flex: 1 1 100%; max-width: 1120px; margin: 0 auto; margin-top: 20px; }
         
-        .grid-container {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 15px;
-        }
-        .data-box {
-            background: #3f3f5a; padding: 15px; border-radius: 8px;
-            font-size: 1.2em; font-weight: bold; border-left: 4px solid #4db8ff;
-        }
-        .data-box span { display: block; font-size: 0.7em; color: #a0a0b5; margin-bottom: 5px; }
-        #mqtt-status { text-align: center; font-size: 0.9em; margin-bottom: 20px; color: #ff4d4d; }
+        canvas { max-width: 100%; }
     </style>
 </head>
 <body>
@@ -67,34 +60,64 @@
             </canvas>
         </div>
 
-        <!-- กล่องแสดงตัวเลขรายจุด (Real-time P1-P8) -->
+        <!-- กล่องแสดงกราฟแท่งรายจุด (Real-time P1-P8) -->
         <div class="card values-card">
             <h3>Node Status (Live)</h3>
-            <div class="grid-container">
-                <div class="data-box"><span>P1 (Bar)</span><div id="p1">0.00</div></div>
-                <div class="data-box"><span>P2 (Bar)</span><div id="p2">0.00</div></div>
-                <div class="data-box"><span>P3 (Bar)</span><div id="p3">0.00</div></div>
-                <div class="data-box"><span>P4 (Bar)</span><div id="p4">0.00</div></div>
-                <div class="data-box"><span>P5 (Bar)</span><div id="p5">0.00</div></div>
-                <div class="data-box"><span>P6 (Bar)</span><div id="p6">0.00</div></div>
-                <div class="data-box"><span>P7 (Bar)</span><div id="p7">0.00</div></div>
-                <div class="data-box"><span>P8 (Bar)</span><div id="p8">0.00</div></div>
-            </div>
+            <!-- เปลี่ยนจาก Grid เป็น Canvas สำหรับวาดกราฟแท่ง -->
+            <canvas id="liveBarChart"></canvas>
         </div>
     </div>
 
-    <!-- กล่องแสดงกราฟ (Historical 24H) -->
+    <!-- กล่องแสดงกราฟเส้น (Historical 24H) -->
     <div class="card chart-card">
         <h3>24-Hour History (Updated every 30 mins)</h3>
         <canvas id="historyChart"></canvas>
     </div>
 
     <script>
+        // ตั้งค่า Theme สีกลางสำหรับ Chart.js ให้เข้ากับพื้นหลังสีเข้ม
+        Chart.defaults.color = '#a0a0b5';
+        Chart.defaults.borderColor = '#3f3f5a';
+
         // ==========================================
-        // 1. ส่วนของการเชื่อมต่อ MQTT (Real-time)
+        // 1. ตั้งค่ากราฟแท่ง (Live Bar Chart)
+        // ==========================================
+        const liveCtx = document.getElementById('liveBarChart').getContext('2d');
+        const liveBarChart = new Chart(liveCtx, {
+            type: 'bar',
+            data: {
+                labels: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'],
+                datasets: [{
+                    label: 'Pressure (Bar)',
+                    data: [0, 0, 0, 0, 0, 0, 0, 0], // ค่าเริ่มต้นเป็น 0
+                    backgroundColor: [
+                        '#ff4d4d', '#ffa64d', '#ffff4d', '#4dff4d', 
+                        '#4dffff', '#4d4dff', '#a64dff', '#ff4da6'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                animation: { duration: 300 }, // ลดแอนิเมชันให้สั้นลงเพื่อให้ดูเรียลไทม์
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        max: 10, 
+                        title: { display: true, text: 'Bar' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false } // ปิด Legend ด้านบนกราฟแท่งเพราะสีแยกชัดเจนแล้ว
+                }
+            }
+        });
+
+        // ==========================================
+        // 2. ส่วนของการเชื่อมต่อ MQTT (Real-time)
         // ==========================================
         const broker = "4d79d42984154e37aab32ca068370f40.s1.eu.hivemq.cloud";
-        const port = 8884; // Port สำหรับ WebSocket SSL
+        const port = 8884; 
         const topic = "factory/bagfilter/pressures";
         const clientId = "WebClient-" + Math.random().toString(16).substr(2, 8);
         const mqtt_user = "esp32_bagfilter_sensor";
@@ -113,18 +136,16 @@
             try {
                 const data = JSON.parse(message.payloadString);
                 
-                // อัปเดตเกจจ์วัด
+                // อัปเดตเกจจ์วัด AV
                 document.getElementById('av-gauge').setAttribute('data-value', data.av.toFixed(2));
                 
-                // อัปเดตตัวเลขรายจุด
-                document.getElementById("p1").innerText = data.p1.toFixed(2);
-                document.getElementById("p2").innerText = data.p2.toFixed(2);
-                document.getElementById("p3").innerText = data.p3.toFixed(2);
-                document.getElementById("p4").innerText = data.p4.toFixed(2);
-                document.getElementById("p5").innerText = data.p5.toFixed(2);
-                document.getElementById("p6").innerText = data.p6.toFixed(2);
-                document.getElementById("p7").innerText = data.p7.toFixed(2);
-                document.getElementById("p8").innerText = data.p8.toFixed(2);
+                // อัปเดตกราฟแท่ง P1-P8
+                liveBarChart.data.datasets[0].data = [
+                    data.p1, data.p2, data.p3, data.p4, 
+                    data.p5, data.p6, data.p7, data.p8
+                ];
+                liveBarChart.update(); // สั่งให้กราฟแท่งเรนเดอร์ใหม่
+
             } catch(e) {
                 console.log("JSON Parse Error: ", e);
             }
@@ -146,10 +167,10 @@
                 }
             });
         }
-        connectMQTT(); // เริ่มต่อ MQTT
+        connectMQTT();
 
         // ==========================================
-        // 2. ส่วนของการดึงข้อมูล Google Sheet (Historical)
+        // 3. ส่วนของการดึงข้อมูล Google Sheet (Historical)
         // ==========================================
         const gasURL = "https://script.google.com/macros/s/AKfycbwkMTHj9lhFm79HaQTtLE4tC77O1ILsmazRb6s5tPdamXZct9hlC7sEwc9Xb3l4XydN/exec";
 
@@ -158,26 +179,19 @@
                 const response = await fetch(gasURL);
                 const data = await response.json();
                 
-                // ถอดโครงสร้างข้อมูลสำหรับ Chart.js
                 const labels = data.map(row => row.time);
-                
                 const datasets = [
-                    { label: 'P1', data: data.map(row => row.p1), borderColor: '#ff4d4d', tension: 0.2, hidden: false },
-                    { label: 'P2', data: data.map(row => row.p2), borderColor: '#ffa64d', tension: 0.2, hidden: false },
-                    { label: 'P3', data: data.map(row => row.p3), borderColor: '#ffff4d', tension: 0.2, hidden: false },
-                    { label: 'P4', data: data.map(row => row.p4), borderColor: '#4dff4d', tension: 0.2, hidden: false },
-                    { label: 'P5', data: data.map(row => row.p5), borderColor: '#4dffff', tension: 0.2, hidden: false },
-                    { label: 'P6', data: data.map(row => row.p6), borderColor: '#4d4dff', tension: 0.2, hidden: false },
-                    { label: 'P7', data: data.map(row => row.p7), borderColor: '#a64dff', tension: 0.2, hidden: false },
-                    { label: 'P8', data: data.map(row => row.p8), borderColor: '#ff4da6', tension: 0.2, hidden: false }
+                    { label: 'P1', data: data.map(row => row.p1), borderColor: '#ff4d4d', tension: 0.2 },
+                    { label: 'P2', data: data.map(row => row.p2), borderColor: '#ffa64d', tension: 0.2 },
+                    { label: 'P3', data: data.map(row => row.p3), borderColor: '#ffff4d', tension: 0.2 },
+                    { label: 'P4', data: data.map(row => row.p4), borderColor: '#4dff4d', tension: 0.2 },
+                    { label: 'P5', data: data.map(row => row.p5), borderColor: '#4dffff', tension: 0.2 },
+                    { label: 'P6', data: data.map(row => row.p6), borderColor: '#4d4dff', tension: 0.2 },
+                    { label: 'P7', data: data.map(row => row.p7), borderColor: '#a64dff', tension: 0.2 },
+                    { label: 'P8', data: data.map(row => row.p8), borderColor: '#ff4da6', tension: 0.2 }
                 ];
 
                 const ctx = document.getElementById('historyChart').getContext('2d');
-                
-                // ตั้งค่า Theme สีให้เข้ากับพื้นหลังสีเข้ม
-                Chart.defaults.color = '#a0a0b5';
-                Chart.defaults.borderColor = '#3f3f5a';
-
                 new Chart(ctx, {
                     type: 'line',
                     data: { labels: labels, datasets: datasets },
@@ -187,9 +201,7 @@
                         scales: {
                             y: { title: { display: true, text: 'Pressure (Bar)' }, min: 0, max: 10 }
                         },
-                        plugins: {
-                            legend: { position: 'top' }
-                        }
+                        plugins: { legend: { position: 'top' } }
                     }
                 });
             } catch (error) {
@@ -197,7 +209,7 @@
             }
         }
         
-        fetchHistoricalData(); // โหลดกราฟเมื่อเปิดหน้าเว็บ
+        fetchHistoricalData(); 
     </script>
 </body>
 </html>
