@@ -8,6 +8,7 @@
     <!-- นำเข้าฟอนต์ Inter จาก Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     
+    <!-- ไลบรารีที่จำเป็น -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.rawgit.com/Mikhus/canvas-gauges/gh-pages/download/2.1.7/radial/gauge.min.js"></script>
@@ -37,7 +38,7 @@
         .header-container {
             display: flex; flex-direction: column; align-items: center; margin-bottom: 30px;
         }
-        h1 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
+        h1 { margin: 0 0 10px 0; font-size: 2rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; text-align: center; }
         
         .status-badge {
             display: inline-flex; align-items: center; gap: 8px;
@@ -81,14 +82,12 @@
         .history-container { position: relative; height: 400px; width: 100%; }
 
         /* --- Responsive Breakpoints --- */
-        /* จอคอมพิวเตอร์ / แท็บเล็ตแนวนอน */
         @media (min-width: 1024px) {
             .dashboard-grid {
                 grid-template-columns: 350px 1fr; /* แบ่ง 2 คอลัมน์ (เกจจ์ซ้าย บาร์ขวา) */
             }
             .full-width { grid-column: 1 / -1; }
         }
-        /* จอมือถือ (ค่าเริ่มต้นคือไหลลงมาเป็น 1 คอลัมน์อยู่แล้ว) */
     </style>
 </head>
 <body>
@@ -102,7 +101,7 @@
     </div>
 
     <div class="dashboard-grid">
-        <!-- Card 1: Gauge -->
+        <!-- Card 1: Gauge (Live AV) -->
         <div class="card">
             <div class="card-header">Main Header Pressure</div>
             <div class="gauge-container">
@@ -123,7 +122,7 @@
             </div>
         </div>
 
-        <!-- Card 2: Live Bar Chart -->
+        <!-- Card 2: Live Bar Chart (P1-P8) -->
         <div class="card">
             <div class="card-header">Live Node Status</div>
             <div class="chart-container">
@@ -131,9 +130,9 @@
             </div>
         </div>
 
-        <!-- Card 3: History Line Chart (เต็มความกว้าง) -->
+        <!-- Card 3: History Line Chart (48 Hours) -->
         <div class="card full-width">
-            <div class="card-header">24-Hour Trend (Sync: 30 Mins)</div>
+            <div class="card-header">48-Hour Trend (Sync: 30 Mins)</div>
             <div class="history-container">
                 <canvas id="historyChart"></canvas>
             </div>
@@ -141,6 +140,7 @@
     </div>
 
     <script>
+        // ตั้งค่า Font และสีพื้นฐานของ Chart.js
         Chart.defaults.font.family = "'Inter', sans-serif";
         Chart.defaults.color = '#94a3b8';
 
@@ -154,8 +154,8 @@
                 labels: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'],
                 datasets: [{
                     data: [0, 0, 0, 0, 0, 0, 0, 0],
-                    backgroundColor: '#38bdf8', // สีฟ้า Modern
-                    borderRadius: 6, // ทำมุมขอบมน
+                    backgroundColor: '#38bdf8', 
+                    borderRadius: 6, 
                     borderSkipped: false,
                     barPercentage: 0.6
                 }]
@@ -164,7 +164,7 @@
                 responsive: true, maintainAspectRatio: false,
                 animation: { duration: 250 },
                 scales: {
-                    x: { grid: { display: false, drawBorder: false } }, // ซ่อนเส้นตาราง
+                    x: { grid: { display: false, drawBorder: false } }, 
                     y: { 
                         beginAtZero: true, max: 10,
                         grid: { color: 'rgba(255, 255, 255, 0.05)', borderDash: [5, 5] },
@@ -192,19 +192,26 @@
         client.onConnectionLost = function(responseObject) {
             mqttDot.classList.remove("online");
             mqttText.innerText = "Disconnected";
+            // พยายามเชื่อมต่อใหม่ทุกๆ 5 วินาทีหากหลุด
             setTimeout(connectMQTT, 5000);
         };
 
         client.onMessageArrived = function(message) {
             try {
                 const data = JSON.parse(message.payloadString);
+                
+                // อัปเดตเข็ม AV
                 document.getElementById('av-gauge').setAttribute('data-value', data.av.toFixed(2));
+                
+                // อัปเดตข้อมูลกราฟแท่ง
                 liveBarChart.data.datasets[0].data = [data.p1, data.p2, data.p3, data.p4, data.p5, data.p6, data.p7, data.p8];
                 
-                // ไฮไลท์แท่งกราฟเป็นสีแดง ถ้าความดันตกลงต่ำกว่า 4 Bar
+                // ไฮไลท์กราฟแท่งเป็นสีแดง ถ้าความดันจุดนั้นตกต่ำกว่า 4 Bar
                 liveBarChart.data.datasets[0].backgroundColor = liveBarChart.data.datasets[0].data.map(val => val < 4 ? '#ef4444' : '#38bdf8');
                 liveBarChart.update();
-            } catch(e) {}
+            } catch(e) {
+                console.log("JSON Parse Error: ", e);
+            }
         };
 
         function connectMQTT() {
@@ -216,14 +223,16 @@
                     client.subscribe(topic);
                 },
                 onFailure: function(message) {
+                    console.log("MQTT Connection failed: " + message.errorMessage);
                     setTimeout(connectMQTT, 5000);
                 }
             });
         }
+        // สั่งให้เริ่มเชื่อมต่อ MQTT ทันที
         connectMQTT();
 
         // ==========================================
-        // 3. ส่วนของการดึงข้อมูล Google Sheet (Historical)
+        // 3. ส่วนของการดึงข้อมูล Google Sheet (Historical 48H)
         // ==========================================
         const gasURL = "https://script.google.com/macros/s/AKfycbwkMTHj9lhFm79HaQTtLE4tC77O1ILsmazRb6s5tPdamXZct9hlC7sEwc9Xb3l4XydN/exec";
 
@@ -233,7 +242,7 @@
                 const data = await response.json();
                 
                 const labels = data.map(row => row.time);
-                // สร้างฟังก์ชันสุ่มสีเพื่อให้เส้นกราฟแยกกันชัดเจน (หรือจะกำหนดเองแบบเดิมก็ได้)
+                // ชุดสีสำหรับเส้นกราฟทั้ง 8 เส้น
                 const colors = ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#2dd4bf', '#38bdf8', '#818cf8', '#e879f9'];
                 
                 const datasets = [];
@@ -243,9 +252,9 @@
                         data: data.map(row => row[`p${i}`]),
                         borderColor: colors[i-1],
                         borderWidth: 2,
-                        pointRadius: 0, // ซ่อนจุดบนเส้นเพื่อให้ดูกลืนตา
+                        pointRadius: 0, // ซ่อนจุดบนเส้นเพื่อให้ดูกลืนตา ไม่รก
                         pointHoverRadius: 5,
-                        tension: 0.4 // ทำให้เส้นกราฟมีความโค้งสมูท
+                        tension: 0.4 // ปรับเส้นกราฟให้มีความโค้งมน
                     });
                 }
 
@@ -264,12 +273,17 @@
                                 title: { display: true, text: 'Pressure (Bar)' }
                             }
                         },
-                        plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } }
+                        plugins: { 
+                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } 
+                        }
                     }
                 });
-            } catch (error) { console.error('Error:', error); }
+            } catch (error) { 
+                console.error('Error fetching Google Sheets data:', error); 
+            }
         }
         
+        // สั่งให้ดึงกราฟจาก Google Sheet ตอนเปิดหน้าเว็บ
         fetchHistoricalData(); 
     </script>
 </body>
