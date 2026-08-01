@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern Bag Filter Dashboard</title>
+    <title>CM 10-11 Bag Filter Dashboard</title>
     
     <!-- ฟอนต์ Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -14,270 +14,329 @@
     <script src="https://cdn.rawgit.com/Mikhus/canvas-gauges/gh-pages/download/2.1.7/radial/gauge.min.js"></script>
 
     <style>
-        /* --- Color Palette & Variables --- */
+        /* =========================================
+           1. ตัวแปรสีและธีม (Design Tokens)
+           ========================================= */
         :root {
-            --bg-body: #0f172a;
-            --bg-card: #1e293b;
+            /* ธีมมืด (Default) */
+            --bg-page: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
             --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --accent-blue: #38bdf8;
+            --text-sub: #94a3b8;
+            --accent-color: #38bdf8;
             --status-ok: #10b981;
             --status-error: #ef4444;
+            --gauge-bg: transparent;
         }
 
-        /* --- Base Styles --- */
-        * { box-sizing: border-box; }
+        [data-theme="light"] {
+            /* ธีมสว่าง */
+            --bg-page: #f1f5f9;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --accent-color: #0284c7;
+            --gauge-bg: transparent;
+        }
+
+        /* =========================================
+           2. ตั้งค่าพื้นฐาน (Base Styles)
+           ========================================= */
+        * { box-sizing: border-box; transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
+        
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: var(--bg-body); 
+            background-color: var(--bg-page); 
             color: var(--text-main);
             margin: 0; 
-            padding: 12px 20px;
+            padding: 15px 20px;
             height: 100dvh; 
             display: flex;
             flex-direction: column;
             overflow: hidden; 
+            background-image: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.05) 0%, transparent 50%);
         }
         
-        /* --- Header & Status --- */
-        .header-container {
+        /* =========================================
+           3. ส่วนหัว (Header)
+           ========================================= */
+        .header {
             display: flex; flex-direction: column; align-items: center; 
-            margin-bottom: 10px; flex-shrink: 0;
+            margin-bottom: 15px; position: relative; z-index: 10;
         }
-        h1 { margin: 0 0 4px 0; font-size: 1.6rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; text-align: center; }
+        
+        .header-title-box { display: flex; align-items: center; gap: 15px; margin-bottom: 8px; }
+        
+        .logo-box {
+            background: #fff; padding: 5px 12px; border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        h1 { margin: 0; font-size: 1.8rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
         
         .status-badge {
-            display: inline-flex; align-items: center; gap: 6px;
-            background: rgba(30, 41, 59, 0.8); padding: 4px 12px; 
-            border-radius: 20px; font-size: 0.8rem; font-weight: 600;
-            border: 1px solid #334155;
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--glass-bg); padding: 5px 16px; 
+            border-radius: 30px; font-size: 0.85rem; font-weight: 600;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
         }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--status-error); }
-        .status-dot.online { background-color: var(--status-ok); box-shadow: 0 0 8px var(--status-ok); animation: pulse 2s infinite; }
+        
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background-color: var(--status-error); }
+        .status-dot.online { background-color: var(--status-ok); box-shadow: 0 0 10px var(--status-ok); animation: pulse 2s infinite; }
+        
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+            70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
-        /* --- Mobile Tabs --- */
-        .mobile-tabs {
-            display: none; background: var(--bg-card); border-radius: 12px;
-            padding: 4px; margin: 0 auto 10px auto; width: 100%; max-width: 400px;
-            gap: 6px; flex-shrink: 0;
+        .theme-btn {
+            position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+            background: var(--glass-bg); color: var(--text-main);
+            border: 1px solid var(--glass-border); border-radius: 50%;
+            width: 40px; height: 40px; cursor: pointer; font-size: 1.2rem;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(10px); box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .tab-btn {
-            flex: 1; padding: 8px; background: transparent; border: none;
-            border-radius: 8px; color: var(--text-muted); font-size: 0.9rem;
-            font-weight: 600; cursor: pointer; transition: all 0.2s ease;
-        }
-        .tab-btn.active { background: var(--accent-blue); color: var(--bg-body); }
+        .theme-btn:hover { transform: translateY(-50%) scale(1.1); }
 
-        /* --- Modern Layout Grid --- */
-        .dashboard-grid {
-            display: grid; gap: 16px; max-width: 1600px; margin: 0 auto;
-            width: 100%; flex-grow: 1; min-height: 0;
-            grid-template-columns: 1fr; 
-            grid-template-rows: 360px minmax(0, 1fr); 
+        /* =========================================
+           4. โครงสร้างหลัก (Layout & Cards)
+           ========================================= */
+        .dashboard-main {
+            display: flex; flex-direction: row; flex-grow: 1; gap: 20px; min-height: 0;
         }
         
-        .card {
-            background: var(--bg-card); border-radius: 16px; padding: 16px 20px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex; flex-direction: column; min-height: 0;
+        .glass-card {
+            background: var(--glass-bg); border-radius: 20px; 
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px;
         }
 
-        .card-header {
-            font-size: 0.95rem; font-weight: 600; color: var(--text-muted);
-            margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0;
+        .card-title {
+            font-size: 1rem; font-weight: 700; color: var(--accent-color); 
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; text-align: center;
         }
 
-        /* --- Combined Gauges Layout --- */
-        .combined-gauges-container {
-            display: flex; flex-direction: row; flex-grow: 1; min-height: 0; gap: 20px; align-items: center;
-        }
-        
-        .main-gauge-section {
-            flex: 0 0 250px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            border-right: 1px solid rgba(255,255,255,0.1); padding-right: 20px; height: 100%;
-        }
+        .card-status { font-size: 0.85rem; font-weight: 600; margin-bottom: 15px; }
+        .text-ok { color: var(--status-ok); }
+        .text-err { color: var(--status-error); }
 
-        .section-label { font-size: 0.95rem; font-weight: 700; color: var(--accent-blue); margin-bottom: 10px; text-align: center; }
+        .main-panel { flex: 0 0 320px; justify-content: center; cursor: pointer; }
+        .main-panel:hover { border-color: var(--accent-color); transform: translateY(-2px); }
 
-        .gate-gauges-section {
+        .gates-panel {
             flex-grow: 1; display: grid; 
             grid-template-columns: repeat(4, 1fr);
             grid-template-rows: repeat(2, 1fr); 
-            gap: 15px 10px; justify-items: center; align-items: center; height: 100%;
+            gap: 15px; background: transparent; padding: 0; border: none; box-shadow: none; backdrop-filter: none;
         }
 
-        /* ป้ายชื่อ Gate */
-        .gauge-item {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: all 0.3s ease;
+        .gate-card {
+            background: var(--glass-bg); border: 1px solid var(--glass-border);
+            border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 10px; cursor: pointer; backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .gate-name {
-            font-size: 0.8rem; font-weight: 600; color: var(--text-main);
-            background: #334155; padding: 4px 12px; border-radius: 12px;
-            margin-bottom: 5px; 
-            z-index: 1; 
-            border: 1px solid #475569;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            transition: all 0.3s ease;
-        }
+        .gate-card:hover { transform: scale(1.03); border-color: var(--accent-color); }
 
-        /* --- Animations สำหรับตอน Pressure ต่ำกว่า 4 --- */
-        @keyframes alertBlink {
-            0% { background-color: #334155; box-shadow: 0 0 0 rgba(239, 68, 68, 0); border-color: #475569; }
-            50% { background-color: var(--status-error); box-shadow: 0 0 15px var(--status-error); border-color: #fca5a5; }
-            100% { background-color: #334155; box-shadow: 0 0 0 rgba(239, 68, 68, 0); border-color: #475569; }
+        /* =========================================
+           5. เอฟเฟกต์แจ้งเตือน (Visual Alerts)
+           ========================================= */
+        .gate-card.alert {
+            animation: borderGlow 1.5s ease-in-out infinite;
+        }
+        @keyframes borderGlow {
+            0% { border-color: rgba(239, 68, 68, 0.5); box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
+            50% { border-color: var(--status-error); box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
+            100% { border-color: rgba(239, 68, 68, 0.5); box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
         }
 
-        .alert-low .gate-name {
-            animation: alertBlink 1s infinite;
+        /* =========================================
+           6. Modal สำหรับแสดงกราฟ (Popup)
+           ========================================= */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+            z-index: 1000; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.3s ease;
         }
+        .modal.show { display: flex; opacity: 1; }
+        
+        .modal-content {
+            background: var(--bg-page); width: 90%; max-width: 1000px; height: 70vh;
+            border-radius: 20px; padding: 25px; border: 1px solid var(--glass-border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: flex; flex-direction: column; position: relative;
+            transform: scale(0.95); transition: transform 0.3s ease;
+        }
+        .modal.show .modal-content { transform: scale(1); }
+        
+        .close-btn {
+            position: absolute; top: 20px; right: 25px; font-size: 1.8rem; color: var(--text-sub);
+            cursor: pointer; background: none; border: none; padding: 0; line-height: 1;
+        }
+        .close-btn:hover { color: var(--status-error); }
+        
+        .chart-wrapper { position: relative; flex-grow: 1; width: 100%; min-height: 0; margin-top: 15px; }
 
-        .history-container { position: relative; width: 100%; flex-grow: 1; min-height: 0; }
-
-        /* --- Responsive Media Queries --- */
-        @media (max-width: 1023px) {
-            .mobile-tabs { display: flex; }
-            .dashboard-grid { display: flex; flex-direction: column; }
-            .card { display: none; }
-            .card.active { display: flex; flex-grow: 1; }
-            
-            .combined-gauges-container { flex-direction: column; overflow-y: auto; padding-right: 5px; }
-            .main-gauge-section { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding-right: 0; padding-bottom: 15px; margin-bottom: 10px; flex: none; height: auto; }
-            .gate-gauges-section { grid-template-columns: repeat(2, 1fr); grid-template-rows: auto; height: auto; gap: 20px 15px; padding-bottom: 20px; }
+        @media (max-width: 1024px) {
+            .dashboard-main { flex-direction: column; overflow-y: auto; padding-right: 5px; }
+            .main-panel { flex: none; padding: 15px; }
+            .gates-panel { grid-template-columns: repeat(2, 1fr); grid-template-rows: auto; height: auto; }
+            .theme-btn { top: 10px; transform: none; }
         }
     </style>
 </head>
 <body>
 
-    <div class="header-container">
-        <h1>Bag Filter Purge Monitor</h1>
-        <div class="status-badge" id="mqtt-badge">
+    <!-- Header Section -->
+    <header class="header">
+        <div class="header-title-box">
+            <div class="logo-box">
+                <!-- เปลี่ยนไปเรียกใช้ไฟล์จากเครื่อง (Local File) เพื่อแก้ปัญหาโดนบล็อก -->
+                <img src="scg-logo.png" alt="SCG" style="height: 30px;">
+            </div>
+            <h1>CM 10-11 Bag Filter Purge</h1>
+        </div>
+        
+        <div class="status-badge">
             <div class="status-dot" id="mqtt-dot"></div>
             <span id="mqtt-text">Connecting...</span>
         </div>
-    </div>
+        
+        <button class="theme-btn" onclick="toggleTheme()" title="Switch Theme">☀️</button>
+    </header>
 
-    <!-- Mobile Tabs -->
-    <div class="mobile-tabs">
-        <button class="tab-btn active" onclick="switchTab('card-live')">Live Status</button>
-        <button class="tab-btn" onclick="switchTab('card-history')">Trend</button>
-    </div>
-
-    <div class="dashboard-grid">
-        <!-- Card 1: Combined Live Pressures -->
-        <div class="card active" id="card-live">
-            <div class="card-header">Live System Pressures</div>
-            <div class="combined-gauges-container">
-                
-                <!-- โซนซ้าย: Main AV -->
-                <div class="main-gauge-section">
-                    <div class="section-label">Main Header</div>
-                    <canvas id="av-gauge" data-type="radial-gauge"
-                        data-width="200" data-height="200"
-                        data-units="Bar" data-title="AV"
-                        data-min-value="0" data-max-value="10"
-                        data-major-ticks="0,2,4,6,8,10" data-minor-ticks="2" data-stroke-ticks="true"
-                        data-highlights='[ {"from": 0, "to": 3, "color": "rgba(239, 68, 68, .3)"}, {"from": 3, "to": 7, "color": "rgba(16, 185, 129, .2)"}, {"from": 7, "to": 10, "color": "rgba(245, 158, 11, .3)"} ]'
-                        data-color-plate="transparent" data-color-major-ticks="#94a3b8" data-color-minor-ticks="#94a3b8"
-                        data-color-title="#fff" data-color-units="#94a3b8" data-color-numbers="#e2e8f0"
-                        data-value-box="true" data-color-value-box-rect="#0f172a" data-color-value-text="#fff"
-                        data-animation-rule="linear" data-animation-duration="300">
-                    </canvas>
-                </div>
-
-                <!-- โซนขวา: 8 Gates พร้อมป้ายชื่อ -->
-                <div class="gate-gauges-section">
-                    <div class="gauge-item" id="item-g1">
-                        <div class="gate-name">6526.04</div>
-                        <canvas id="gauge-g1"></canvas>
-                    </div>
-                    <div class="gauge-item" id="item-g2">
-                        <div class="gate-name">6524.041</div>
-                        <canvas id="gauge-g2"></canvas>
-                    </div>
-                    <div class="gauge-item" id="item-g3">
-                        <div class="gate-name">6526.08</div>
-                        <canvas id="gauge-g3"></canvas>
-                    </div>
-                    <div class="gauge-item" id="item-g4">
-                        <div class="gate-name">6536.04</div>
-                        <canvas id="gauge-g4"></canvas>
-                    </div>
-                    <div class="gauge-item" id="item-g5">
-                        <div class="gate-name">6536.041</div>
-                        <canvas id="gauge-g5"></canvas>
-                    </div>
-                    <div class="gauge-item" id="item-g6">
-                        <div class="gate-name">6536.08</div>
-                        <canvas id="gauge-g6"></canvas>
-                    </div>
-                    <div class="gauge-item" id="item-g7">
-                        <div class="gate-name">6511.76</div>
-                        <canvas id="gauge-g7"></canvas>
-                    </div>
-                    <div class="gauge-item" id="item-g8">
-                        <div class="gate-name">6511.80</div>
-                        <canvas id="gauge-g8"></canvas>
-                    </div>
-                </div>
-
-            </div>
+    <!-- Main Dashboard Area -->
+    <main class="dashboard-main">
+        
+        <!-- Left: Main Header Pressure -->
+        <div class="glass-card main-panel" onclick="openChartModal('av', 'Main Header (AV)', '#38bdf8')">
+            <div class="card-title">Main Header</div>
+            <div class="card-status text-ok" id="status-av">System Normal</div>
+            <canvas id="gauge-av"></canvas>
         </div>
 
-        <!-- Card 2: History Line Chart -->
-        <div class="card" id="card-history">
-            <div class="card-header">48-Hour Combined Trend (Sync: 30 Mins)</div>
-            <div class="history-container">
+        <!-- Right: 8 Gates Grid -->
+        <div class="gates-panel" id="gates-container">
+            <!-- สร้างผ่าน JS -->
+        </div>
+
+    </main>
+
+    <!-- Modal Chart (ซ่อนไว้ เริ่มต้น) -->
+    <div class="modal" id="chartModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-btn" onclick="closeModal(event)">&times;</button>
+            <div class="card-title" id="modalTitle">Loading History...</div>
+            <div class="chart-wrapper">
                 <canvas id="historyChart"></canvas>
             </div>
         </div>
     </div>
 
+    <!-- =========================================
+         JavaScript Logic
+         ========================================= -->
     <script>
-        // Tab Switcher (Mobile)
-        function switchTab(targetCardId) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-            document.getElementById(targetCardId).classList.add('active');
-            setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+        // --- 1. จัดการ Dark / Light Mode ---
+        let currentTheme = 'dark';
+        
+        function toggleTheme() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            document.querySelector('.theme-btn').innerText = currentTheme === 'dark' ? '☀️' : '🌙';
+            
+            const isLight = currentTheme === 'light';
+            const titleColor = isLight ? '#0f172a' : '#f8fafc';
+            const numColor = isLight ? '#64748b' : '#94a3b8';
+            const tickColor = isLight ? '#94a3b8' : '#64748b';
+
+            document.gauges.forEach(gauge => {
+                gauge.update({
+                    colorTitle: titleColor,
+                    colorNumbers: numColor,
+                    colorMajorTicks: tickColor,
+                    colorMinorTicks: tickColor,
+                    colorValueText: titleColor
+                });
+            });
+
+            if (chartInstance) {
+                const gridColor = isLight ? '#e2e8f0' : 'rgba(255,255,255,0.05)';
+                chartInstance.options.scales.x.grid.color = gridColor;
+                chartInstance.options.scales.y.grid.color = gridColor;
+                chartInstance.update();
+            }
         }
 
-        // Setup 8 Mini Gauges configuration 
-        const gateIds = ['gauge-g1','gauge-g2','gauge-g3','gauge-g4','gauge-g5','gauge-g6','gauge-g7','gauge-g8'];
-        gateIds.forEach(id => {
-            let el = document.getElementById(id);
+        // --- 2. ฟังก์ชันสร้าง Gauge อัตโนมัติ ---
+        const gatesConfig = [
+            { id: 'p1', name: '6526.04', color: '#38bdf8' },
+            { id: 'p2', name: '6524.041', color: '#38bdf8' },
+            { id: 'p3', name: '6526.08', color: '#38bdf8' },
+            { id: 'p4', name: '6536.04', color: '#38bdf8' },
+            { id: 'p5', name: '6536.041', color: '#38bdf8' },
+            { id: 'p6', name: '6536.08', color: '#38bdf8' },
+            { id: 'p7', name: '6511.76', color: '#38bdf8' },
+            { id: 'p8', name: '6511.80', color: '#38bdf8' }
+        ];
+
+        const container = document.getElementById('gates-container');
+        
+        gatesConfig.forEach((gate) => {
+            const html = `
+                <div class="gate-card" id="card-${gate.id}" onclick="openChartModal('${gate.id}', 'Gate ${gate.name}', '${gate.color}')">
+                    <div class="card-title">${gate.name}</div>
+                    <div class="card-status text-ok" id="status-${gate.id}">Wait...</div>
+                    <canvas id="gauge-${gate.id}"></canvas>
+                </div>
+            `;
+            container.innerHTML += html;
+        });
+
+        // ฟังก์ชันตั้งค่าหน้าปัดเกจ (ปรับสีแถบ Highlights ให้เข้มทึบ 100%)
+        function initGauge(elementId, size) {
+            let el = document.getElementById(elementId);
             el.setAttribute('data-type', 'radial-gauge');
-            el.setAttribute('data-width', '110'); 
-            el.setAttribute('data-height', '110');
+            el.setAttribute('data-width', size); 
+            el.setAttribute('data-height', size);
             el.setAttribute('data-min-value', '0');
             el.setAttribute('data-max-value', '10');
-            el.setAttribute('data-major-ticks', '0,5,10');
-            el.setAttribute('data-minor-ticks', '5');
-            el.setAttribute('data-highlights', '[ {"from": 0, "to": 3, "color": "rgba(239, 68, 68, .3)"}, {"from": 3, "to": 10, "color": "rgba(56, 189, 248, .2)"} ]');
+            el.setAttribute('data-major-ticks', '0,2,4,6,8,10');
+            el.setAttribute('data-minor-ticks', '2');
+            el.setAttribute('data-stroke-ticks', 'true');
+            // ปรับสีทึบ: แดง (#ef4444) และ เขียว (#10b981)
+            el.setAttribute('data-highlights', '[ {"from": 0, "to": 4, "color": "#ef4444"}, {"from": 4, "to": 10, "color": "#10b981"} ]');
             el.setAttribute('data-color-plate', 'transparent');
             el.setAttribute('data-color-major-ticks', '#64748b');
             el.setAttribute('data-color-minor-ticks', '#64748b');
+            el.setAttribute('data-color-title', '#f8fafc');
             el.setAttribute('data-color-numbers', '#94a3b8');
             el.setAttribute('data-value-box', 'true');
             el.setAttribute('data-color-value-box-rect', 'transparent');
-            el.setAttribute('data-color-value-text', '#fff');
-            el.setAttribute('data-animation-rule', 'linear');
-            el.setAttribute('data-animation-duration', '300');
-        });
+            el.setAttribute('data-color-value-text', '#f8fafc');
+            el.setAttribute('data-animation-rule', 'bounce'); 
+            el.setAttribute('data-animation-duration', '500');
+        }
 
-        // MQTT Config
+        // โหลดตั้งค่าเกจทั้งหมด
+        initGauge('gauge-av', '240');
+        gatesConfig.forEach(gate => initGauge(`gauge-${gate.id}`, '135'));
+
+        // --- 3. MQTT Connection & Data Update ---
         const broker = "4d79d42984154e37aab32ca068370f40.s1.eu.hivemq.cloud";
         const port = 8884; 
         const topic = "factory/bagfilter/pressures";
-        const clientId = "WebClient-" + Math.random().toString(16).substr(2, 8);
+        const clientId = "WebClient-UI-" + Math.random().toString(16).substr(2, 8);
         const mqtt_user = "esp32_bagfilter_sensor";
         const mqtt_password = "Mcl195088";
 
@@ -285,9 +344,9 @@
         const mqttDot = document.getElementById("mqtt-dot");
         const mqttText = document.getElementById("mqtt-text");
 
-        client.onConnectionLost = function(responseObject) {
+        client.onConnectionLost = function(res) {
             mqttDot.classList.remove("online");
-            mqttText.innerText = "Disconnected";
+            mqttText.innerText = "Offline - Reconnecting";
             setTimeout(connectMQTT, 5000);
         };
 
@@ -295,32 +354,37 @@
             try {
                 const data = JSON.parse(message.payloadString);
                 
-                // Update Main AV Gauge
-                document.getElementById('av-gauge').setAttribute('data-value', data.av.toFixed(2));
+                document.getElementById('gauge-av').setAttribute('data-value', data.av.toFixed(2));
+                const avStatus = document.getElementById('status-av');
+                if (data.av < 4) {
+                    avStatus.innerText = "Low Pressure";
+                    avStatus.className = "card-status text-err";
+                } else {
+                    avStatus.innerText = "System Normal";
+                    avStatus.className = "card-status text-ok";
+                }
                 
-                // ฟังก์ชันอัพเดทค่าและเช็คการแจ้งเตือน (ต่ำกว่า 4 bar ให้กระพริบ)
-                const updateGate = (index, val) => {
-                    document.getElementById(`gauge-g${index}`).setAttribute('data-value', val);
-                    const itemBox = document.getElementById(`item-g${index}`);
+                const updateGateUI = (id, val) => {
+                    document.getElementById(`gauge-${id}`).setAttribute('data-value', val);
+                    const card = document.getElementById(`card-${id}`);
+                    const statusText = document.getElementById(`status-${id}`);
                     
                     if (val < 4) {
-                        itemBox.classList.add('alert-low');
+                        card.classList.add('alert');
+                        statusText.innerText = "Low Pressure";
+                        statusText.className = "card-status text-err";
                     } else {
-                        itemBox.classList.remove('alert-low');
+                        card.classList.remove('alert');
+                        statusText.innerText = "Normal";
+                        statusText.className = "card-status text-ok";
                     }
                 };
 
-                // อัพเดทข้อมูลเข้าเกจทั้ง 8 ตัว
-                updateGate(1, data.p1);
-                updateGate(2, data.p2);
-                updateGate(3, data.p3);
-                updateGate(4, data.p4);
-                updateGate(5, data.p5);
-                updateGate(6, data.p6);
-                updateGate(7, data.p7);
-                updateGate(8, data.p8);
+                gatesConfig.forEach((gate, idx) => {
+                    updateGateUI(gate.id, data[`p${idx+1}`]);
+                });
                 
-            } catch(e) { console.log("JSON Parse Error: ", e); }
+            } catch(e) { console.error("JSON Error:", e); }
         };
 
         function connectMQTT() {
@@ -331,62 +395,85 @@
                     mqttText.innerText = "Live Connected";
                     client.subscribe(topic);
                 },
-                onFailure: function(message) { setTimeout(connectMQTT, 5000); }
+                onFailure: function() { setTimeout(connectMQTT, 5000); }
             });
         }
         connectMQTT();
 
-        // Chart.js - History Combined Trend
-        Chart.defaults.font.family = "'Inter', sans-serif";
-        Chart.defaults.color = '#94a3b8';
-        const gasURL = "https://script.google.com/macros/s/AKfycbwkMTHj9lhFm79HaQTtLE4tC77O1ILsmazRb6s5tPdamXZct9hlC7sEwc9Xb3l4XydN/exec";
+        // --- 4. กราฟ 48 ชั่วโมง (ดึงข้อมูลเตรียมไว้ก่อน) ---
+        let globalHistory = [];
+        const sheetURL = "https://script.google.com/macros/s/AKfycbwkMTHj9lhFm79HaQTtLE4tC77O1ILsmazRb6s5tPdamXZct9hlC7sEwc9Xb3l4XydN/exec";
 
-        async function fetchHistoricalData() {
+        async function fetchHistory() {
             try {
-                const response = await fetch(gasURL);
-                const data = await response.json();
-                
-                const labels = data.map(row => row.time);
-                const colors = ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#2dd4bf', '#38bdf8', '#818cf8', '#e879f9'];
-                
-                const gateNames = ['6526.04', '6524.041', '6526.08', '6536.04', '6536.041', '6536.08', '6511.76', '6511.80'];
-                
-                const datasets = [];
-                for(let i=1; i<=8; i++) {
-                    datasets.push({
-                        label: gateNames[i-1],
-                        data: data.map(row => row[`p${i}`]),
-                        borderColor: colors[i-1],
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        pointHoverRadius: 5,
-                        tension: 0.4
-                    });
-                }
-
-                const ctx = document.getElementById('historyChart').getContext('2d');
-                new Chart(ctx, {
-                    type: 'line',
-                    data: { labels: labels, datasets: datasets },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        interaction: { mode: 'index', intersect: false },
-                        scales: {
-                            x: { grid: { display: false } },
-                            y: { 
-                                min: 0, max: 10,
-                                grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                                title: { display: true, text: 'Pressure (Bar)' }
-                            }
-                        },
-                        plugins: { 
-                            legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } } 
-                        }
-                    }
-                });
-            } catch (error) { console.error('Error fetching Google Sheets data:', error); }
+                const res = await fetch(sheetURL);
+                globalHistory = await res.json();
+            } catch (err) { console.error('Fetch Error:', err); }
         }
-        fetchHistoricalData(); 
+        fetchHistory(); 
+
+        // --- 5. จัดการแสดงผลกราฟใน Modal (Popup) ---
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        let chartInstance = null;
+
+        function openChartModal(dataKey, title, colorCode) {
+            const modal = document.getElementById('chartModal');
+            const titleEl = document.getElementById('modalTitle');
+            
+            modal.classList.add('show');
+            
+            if (globalHistory.length === 0) {
+                titleEl.innerText = "Loading data from database... Please wait.";
+                return;
+            }
+            
+            titleEl.innerText = `${title} - 48 Hours Trend`;
+            
+            const labels = globalHistory.map(r => r.time);
+            const dataset = globalHistory.map(r => r[dataKey]);
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            
+            if (chartInstance) chartInstance.destroy();
+
+            const isLight = currentTheme === 'light';
+            const gridColor = isLight ? '#e2e8f0' : 'rgba(255,255,255,0.05)';
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pressure (Bar)',
+                        data: dataset,
+                        borderColor: colorCode,
+                        backgroundColor: colorCode + '20', 
+                        borderWidth: 2,
+                        fill: true,
+                        pointRadius: 0, 
+                        pointHoverRadius: 6,
+                        tension: 0.4 
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { 
+                            min: 0, max: 10,
+                            grid: { color: gridColor },
+                            title: { display: true, text: 'Pressure (Bar)' }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function closeModal(e) {
+            if(e) e.stopPropagation();
+            document.getElementById('chartModal').classList.remove('show');
+        }
     </script>
 </body>
 </html>
