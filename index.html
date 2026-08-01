@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modern Bag Filter Dashboard</title>
     
-    <!-- นำเข้าฟอนต์ Inter จาก Google Fonts -->
+    <!-- ฟอนต์ Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     
-    <!-- ไลบรารีที่จำเป็น -->
+    <!-- ไลบรารี -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.rawgit.com/Mikhus/canvas-gauges/gh-pages/download/2.1.7/radial/gauge.min.js"></script>
@@ -36,25 +36,15 @@
             height: 100dvh; 
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: hidden; 
         }
         
         /* --- Header & Status --- */
         .header-container {
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            margin-bottom: 10px;
-            flex-shrink: 0;
+            display: flex; flex-direction: column; align-items: center; 
+            margin-bottom: 10px; flex-shrink: 0;
         }
-        h1 { 
-            margin: 0 0 4px 0; 
-            font-size: 1.6rem; 
-            font-weight: 700; 
-            color: var(--text-main); 
-            letter-spacing: -0.5px; 
-            text-align: center; 
-        }
+        h1 { margin: 0 0 4px 0; font-size: 1.6rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; text-align: center; }
         
         .status-badge {
             display: inline-flex; align-items: center; gap: 6px;
@@ -62,15 +52,8 @@
             border-radius: 20px; font-size: 0.8rem; font-weight: 600;
             border: 1px solid #334155;
         }
-        .status-dot {
-            width: 8px; height: 8px; border-radius: 50%;
-            background-color: var(--status-error);
-        }
-        .status-dot.online {
-            background-color: var(--status-ok);
-            box-shadow: 0 0 8px var(--status-ok);
-            animation: pulse 2s infinite;
-        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: var(--status-error); }
+        .status-dot.online { background-color: var(--status-ok); box-shadow: 0 0 8px var(--status-ok); animation: pulse 2s infinite; }
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
             70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
@@ -79,79 +62,95 @@
 
         /* --- Mobile Tabs --- */
         .mobile-tabs {
-            display: none;
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 4px;
-            margin: 0 auto 10px auto;
-            width: 100%;
-            max-width: 500px;
-            gap: 6px;
-            flex-shrink: 0;
+            display: none; background: var(--bg-card); border-radius: 12px;
+            padding: 4px; margin: 0 auto 10px auto; width: 100%; max-width: 400px;
+            gap: 6px; flex-shrink: 0;
         }
         .tab-btn {
             flex: 1; padding: 8px; background: transparent; border: none;
-            border-radius: 8px; color: var(--text-muted); font-size: 0.85rem;
+            border-radius: 8px; color: var(--text-muted); font-size: 0.9rem;
             font-weight: 600; cursor: pointer; transition: all 0.2s ease;
         }
         .tab-btn.active { background: var(--accent-blue); color: var(--bg-body); }
 
         /* --- Modern Layout Grid --- */
         .dashboard-grid {
-            display: grid; 
-            gap: 16px;
-            max-width: 1600px; 
-            margin: 0 auto;
-            width: 100%;
-            flex-grow: 1;
-            min-height: 0;
-            /* ปรับความสูงแถวบนให้กระชับขึ้น (300px) เพื่อให้แถวล่างมีพื้นที่แสดงกราฟมากขึ้น */
-            grid-template-columns: 330px minmax(0, 1fr);
-            grid-template-rows: 290px minmax(0, 1fr);
+            display: grid; gap: 16px; max-width: 1600px; margin: 0 auto;
+            width: 100%; flex-grow: 1; min-height: 0;
+            grid-template-columns: 1fr; 
+            grid-template-rows: 360px minmax(0, 1fr); 
         }
         
         .card {
-            background: var(--bg-card); 
-            border-radius: 16px; 
-            padding: 18px 20px;
+            background: var(--bg-card); border-radius: 16px; padding: 16px 20px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
             border: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex; 
-            flex-direction: column;
-            min-height: 0;
+            display: flex; flex-direction: column; min-height: 0;
         }
 
         .card-header {
-            font-size: 0.95rem; 
-            font-weight: 600; 
-            color: var(--text-muted);
-            margin-bottom: 10px; 
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 6px; 
-            text-transform: uppercase; 
-            letter-spacing: 1px;
-            flex-shrink: 0;
+            font-size: 0.95rem; font-weight: 600; color: var(--text-muted);
+            margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; flex-shrink: 0;
         }
 
-        .gauge-container { 
-            display: flex; justify-content: center; align-items: center; flex-grow: 1; 
+        /* --- Combined Gauges Layout --- */
+        .combined-gauges-container {
+            display: flex; flex-direction: row; flex-grow: 1; min-height: 0; gap: 20px; align-items: center;
         }
         
-        .chart-container, .history-container { 
-            position: relative; width: 100%; flex-grow: 1; min-height: 0; 
+        .main-gauge-section {
+            flex: 0 0 250px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-right: 1px solid rgba(255,255,255,0.1); padding-right: 20px; height: 100%;
         }
 
-        .full-width { grid-column: 1 / -1; }
+        .section-label { font-size: 0.95rem; font-weight: 700; color: var(--accent-blue); margin-bottom: 10px; text-align: center; }
+
+        .gate-gauges-section {
+            flex-grow: 1; display: grid; 
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr); 
+            gap: 15px 10px; justify-items: center; align-items: center; height: 100%;
+        }
+
+        /* ป้ายชื่อ Gate */
+        .gauge-item {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: all 0.3s ease;
+        }
+        .gate-name {
+            font-size: 0.8rem; font-weight: 600; color: var(--text-main);
+            background: #334155; padding: 4px 12px; border-radius: 12px;
+            margin-bottom: 5px; 
+            z-index: 1; 
+            border: 1px solid #475569;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        /* --- Animations สำหรับตอน Pressure ต่ำกว่า 4 --- */
+        @keyframes alertBlink {
+            0% { background-color: #334155; box-shadow: 0 0 0 rgba(239, 68, 68, 0); border-color: #475569; }
+            50% { background-color: var(--status-error); box-shadow: 0 0 15px var(--status-error); border-color: #fca5a5; }
+            100% { background-color: #334155; box-shadow: 0 0 0 rgba(239, 68, 68, 0); border-color: #475569; }
+        }
+
+        .alert-low .gate-name {
+            animation: alertBlink 1s infinite;
+        }
+
+        .history-container { position: relative; width: 100%; flex-grow: 1; min-height: 0; }
 
         /* --- Responsive Media Queries --- */
         @media (max-width: 1023px) {
             .mobile-tabs { display: flex; }
-            .dashboard-grid {
-                display: flex;
-                flex-direction: column;
-            }
+            .dashboard-grid { display: flex; flex-direction: column; }
             .card { display: none; }
             .card.active { display: flex; flex-grow: 1; }
+            
+            .combined-gauges-container { flex-direction: column; overflow-y: auto; padding-right: 5px; }
+            .main-gauge-section { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding-right: 0; padding-bottom: 15px; margin-bottom: 10px; flex: none; height: auto; }
+            .gate-gauges-section { grid-template-columns: repeat(2, 1fr); grid-template-rows: auto; height: auto; gap: 20px 15px; padding-bottom: 20px; }
         }
     </style>
 </head>
@@ -165,46 +164,76 @@
         </div>
     </div>
 
-    <!-- ส่วนของ Mobile Tabs -->
+    <!-- Mobile Tabs -->
     <div class="mobile-tabs">
-        <button class="tab-btn active" onclick="switchTab('card-gauge')">Gauge</button>
-        <button class="tab-btn" onclick="switchTab('card-live')">Live Node</button>
-        <button class="tab-btn" onclick="switchTab('card-history')">48H Trend</button>
+        <button class="tab-btn active" onclick="switchTab('card-live')">Live Status</button>
+        <button class="tab-btn" onclick="switchTab('card-history')">Trend</button>
     </div>
 
     <div class="dashboard-grid">
-        <!-- Card 1: Gauge (Live AV) -->
-        <div class="card active" id="card-gauge">
-            <div class="card-header">Main Header Pressure</div>
-            <div class="gauge-container">
-                <canvas id="av-gauge" data-type="radial-gauge"
-                    data-width="210" data-height="210"
-                    data-units="Bar" data-title="AV"
-                    data-min-value="0" data-max-value="10"
-                    data-major-ticks="0,2,4,6,8,10"
-                    data-minor-ticks="2"
-                    data-stroke-ticks="true"
-                    data-highlights='[ {"from": 0, "to": 3, "color": "rgba(239, 68, 68, .3)"}, {"from": 3, "to": 7, "color": "rgba(16, 185, 129, .2)"}, {"from": 7, "to": 10, "color": "rgba(245, 158, 11, .3)"} ]'
-                    data-color-plate="transparent"
-                    data-color-major-ticks="#94a3b8" data-color-minor-ticks="#94a3b8"
-                    data-color-title="#fff" data-color-units="#94a3b8" data-color-numbers="#e2e8f0"
-                    data-value-box="true" data-color-value-box-rect="#0f172a" data-color-value-text="#fff"
-                    data-animation-rule="linear" data-animation-duration="300">
-                </canvas>
+        <!-- Card 1: Combined Live Pressures -->
+        <div class="card active" id="card-live">
+            <div class="card-header">Live System Pressures</div>
+            <div class="combined-gauges-container">
+                
+                <!-- โซนซ้าย: Main AV -->
+                <div class="main-gauge-section">
+                    <div class="section-label">Main Header</div>
+                    <canvas id="av-gauge" data-type="radial-gauge"
+                        data-width="200" data-height="200"
+                        data-units="Bar" data-title="AV"
+                        data-min-value="0" data-max-value="10"
+                        data-major-ticks="0,2,4,6,8,10" data-minor-ticks="2" data-stroke-ticks="true"
+                        data-highlights='[ {"from": 0, "to": 3, "color": "rgba(239, 68, 68, .3)"}, {"from": 3, "to": 7, "color": "rgba(16, 185, 129, .2)"}, {"from": 7, "to": 10, "color": "rgba(245, 158, 11, .3)"} ]'
+                        data-color-plate="transparent" data-color-major-ticks="#94a3b8" data-color-minor-ticks="#94a3b8"
+                        data-color-title="#fff" data-color-units="#94a3b8" data-color-numbers="#e2e8f0"
+                        data-value-box="true" data-color-value-box-rect="#0f172a" data-color-value-text="#fff"
+                        data-animation-rule="linear" data-animation-duration="300">
+                    </canvas>
+                </div>
+
+                <!-- โซนขวา: 8 Gates พร้อมป้ายชื่อ -->
+                <div class="gate-gauges-section">
+                    <div class="gauge-item" id="item-g1">
+                        <div class="gate-name">6526.04</div>
+                        <canvas id="gauge-g1"></canvas>
+                    </div>
+                    <div class="gauge-item" id="item-g2">
+                        <div class="gate-name">6524.041</div>
+                        <canvas id="gauge-g2"></canvas>
+                    </div>
+                    <div class="gauge-item" id="item-g3">
+                        <div class="gate-name">6526.08</div>
+                        <canvas id="gauge-g3"></canvas>
+                    </div>
+                    <div class="gauge-item" id="item-g4">
+                        <div class="gate-name">6536.04</div>
+                        <canvas id="gauge-g4"></canvas>
+                    </div>
+                    <div class="gauge-item" id="item-g5">
+                        <div class="gate-name">6536.041</div>
+                        <canvas id="gauge-g5"></canvas>
+                    </div>
+                    <div class="gauge-item" id="item-g6">
+                        <div class="gate-name">6536.08</div>
+                        <canvas id="gauge-g6"></canvas>
+                    </div>
+                    <div class="gauge-item" id="item-g7">
+                        <div class="gate-name">6511.76</div>
+                        <canvas id="gauge-g7"></canvas>
+                    </div>
+                    <div class="gauge-item" id="item-g8">
+                        <div class="gate-name">6511.80</div>
+                        <canvas id="gauge-g8"></canvas>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <!-- Card 2: Live Bar Chart (P1-P8) -->
-        <div class="card" id="card-live">
-            <div class="card-header">Live Node Status</div>
-            <div class="chart-container">
-                <canvas id="liveBarChart"></canvas>
-            </div>
-        </div>
-
-        <!-- Card 3: History Line Chart (48 Hours) -->
-        <div class="card full-width" id="card-history">
-            <div class="card-header">48-Hour Trend (Sync: 30 Mins)</div>
+        <!-- Card 2: History Line Chart -->
+        <div class="card" id="card-history">
+            <div class="card-header">48-Hour Combined Trend (Sync: 30 Mins)</div>
             <div class="history-container">
                 <canvas id="historyChart"></canvas>
             </div>
@@ -212,49 +241,39 @@
     </div>
 
     <script>
+        // Tab Switcher (Mobile)
         function switchTab(targetCardId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.card').forEach(card => card.classList.remove('active'));
-
             event.currentTarget.classList.add('active');
             document.getElementById(targetCardId).classList.add('active');
-
-            setTimeout(() => {
-                window.dispatchEvent(new Event('resize'));
-            }, 50);
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
         }
 
-        Chart.defaults.font.family = "'Inter', sans-serif";
-        Chart.defaults.color = '#94a3b8';
-
-        const liveCtx = document.getElementById('liveBarChart').getContext('2d');
-        const liveBarChart = new Chart(liveCtx, {
-            type: 'bar',
-            data: {
-                labels: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7', 'P8'],
-                datasets: [{
-                    data: [0, 0, 0, 0, 0, 0, 0, 0],
-                    backgroundColor: '#38bdf8', 
-                    borderRadius: 6, 
-                    borderSkipped: false,
-                    barPercentage: 0.6
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                animation: { duration: 250 },
-                scales: {
-                    x: { grid: { display: false, drawBorder: false } }, 
-                    y: { 
-                        beginAtZero: true, max: 10,
-                        grid: { color: 'rgba(255, 255, 255, 0.05)', borderDash: [5, 5] },
-                        title: { display: true, text: 'Bar', color: '#64748b' }
-                    }
-                },
-                plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } }
-            }
+        // Setup 8 Mini Gauges configuration 
+        const gateIds = ['gauge-g1','gauge-g2','gauge-g3','gauge-g4','gauge-g5','gauge-g6','gauge-g7','gauge-g8'];
+        gateIds.forEach(id => {
+            let el = document.getElementById(id);
+            el.setAttribute('data-type', 'radial-gauge');
+            el.setAttribute('data-width', '110'); 
+            el.setAttribute('data-height', '110');
+            el.setAttribute('data-min-value', '0');
+            el.setAttribute('data-max-value', '10');
+            el.setAttribute('data-major-ticks', '0,5,10');
+            el.setAttribute('data-minor-ticks', '5');
+            el.setAttribute('data-highlights', '[ {"from": 0, "to": 3, "color": "rgba(239, 68, 68, .3)"}, {"from": 3, "to": 10, "color": "rgba(56, 189, 248, .2)"} ]');
+            el.setAttribute('data-color-plate', 'transparent');
+            el.setAttribute('data-color-major-ticks', '#64748b');
+            el.setAttribute('data-color-minor-ticks', '#64748b');
+            el.setAttribute('data-color-numbers', '#94a3b8');
+            el.setAttribute('data-value-box', 'true');
+            el.setAttribute('data-color-value-box-rect', 'transparent');
+            el.setAttribute('data-color-value-text', '#fff');
+            el.setAttribute('data-animation-rule', 'linear');
+            el.setAttribute('data-animation-duration', '300');
         });
 
+        // MQTT Config
         const broker = "4d79d42984154e37aab32ca068370f40.s1.eu.hivemq.cloud";
         const port = 8884; 
         const topic = "factory/bagfilter/pressures";
@@ -275,13 +294,33 @@
         client.onMessageArrived = function(message) {
             try {
                 const data = JSON.parse(message.payloadString);
+                
+                // Update Main AV Gauge
                 document.getElementById('av-gauge').setAttribute('data-value', data.av.toFixed(2));
-                liveBarChart.data.datasets[0].data = [data.p1, data.p2, data.p3, data.p4, data.p5, data.p6, data.p7, data.p8];
-                liveBarChart.data.datasets[0].backgroundColor = liveBarChart.data.datasets[0].data.map(val => val < 4 ? '#ef4444' : '#38bdf8');
-                liveBarChart.update();
-            } catch(e) {
-                console.log("JSON Parse Error: ", e);
-            }
+                
+                // ฟังก์ชันอัพเดทค่าและเช็คการแจ้งเตือน (ต่ำกว่า 4 bar ให้กระพริบ)
+                const updateGate = (index, val) => {
+                    document.getElementById(`gauge-g${index}`).setAttribute('data-value', val);
+                    const itemBox = document.getElementById(`item-g${index}`);
+                    
+                    if (val < 4) {
+                        itemBox.classList.add('alert-low');
+                    } else {
+                        itemBox.classList.remove('alert-low');
+                    }
+                };
+
+                // อัพเดทข้อมูลเข้าเกจทั้ง 8 ตัว
+                updateGate(1, data.p1);
+                updateGate(2, data.p2);
+                updateGate(3, data.p3);
+                updateGate(4, data.p4);
+                updateGate(5, data.p5);
+                updateGate(6, data.p6);
+                updateGate(7, data.p7);
+                updateGate(8, data.p8);
+                
+            } catch(e) { console.log("JSON Parse Error: ", e); }
         };
 
         function connectMQTT() {
@@ -292,14 +331,14 @@
                     mqttText.innerText = "Live Connected";
                     client.subscribe(topic);
                 },
-                onFailure: function(message) {
-                    console.log("MQTT Connection failed: " + message.errorMessage);
-                    setTimeout(connectMQTT, 5000);
-                }
+                onFailure: function(message) { setTimeout(connectMQTT, 5000); }
             });
         }
         connectMQTT();
 
+        // Chart.js - History Combined Trend
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#94a3b8';
         const gasURL = "https://script.google.com/macros/s/AKfycbwkMTHj9lhFm79HaQTtLE4tC77O1ILsmazRb6s5tPdamXZct9hlC7sEwc9Xb3l4XydN/exec";
 
         async function fetchHistoricalData() {
@@ -310,10 +349,12 @@
                 const labels = data.map(row => row.time);
                 const colors = ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#2dd4bf', '#38bdf8', '#818cf8', '#e879f9'];
                 
+                const gateNames = ['6526.04', '6524.041', '6526.08', '6536.04', '6536.041', '6536.08', '6511.76', '6511.80'];
+                
                 const datasets = [];
                 for(let i=1; i<=8; i++) {
                     datasets.push({
-                        label: `P${i}`,
+                        label: gateNames[i-1],
                         data: data.map(row => row[`p${i}`]),
                         borderColor: colors[i-1],
                         borderWidth: 2,
@@ -343,11 +384,8 @@
                         }
                     }
                 });
-            } catch (error) { 
-                console.error('Error fetching Google Sheets data:', error); 
-            }
+            } catch (error) { console.error('Error fetching Google Sheets data:', error); }
         }
-        
         fetchHistoricalData(); 
     </script>
 </body>
