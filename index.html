@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CM 10-11 Bag Filter Dashboard</title>
     
-    <!-- ฟอนต์ Inter (Modern UI Font) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- ฟอนต์ Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <!-- ไลบรารี -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
@@ -15,14 +15,13 @@
 
     <style>
         /* =========================================
-           1. Design Tokens (ระบบสีและธีม)
+           1. Design Tokens & Themes
            ========================================= */
         :root {
-            /* ธีมมืด (Dark Mode) - เน้นความพรีเมียม สบายตา */
+            /* Dark Mode */
             --bg-page: #0f172a;
-            --glass-bg: rgba(30, 41, 59, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
             --text-main: #f8fafc;
             --text-sub: #94a3b8;
             --accent-color: #38bdf8;
@@ -31,169 +30,191 @@
         }
 
         [data-theme="light"] {
-            /* ธีมสว่าง (Light Mode) - เน้นความสะอาดตาทางการ */
+            /* Light Mode */
             --bg-page: #f1f5f9;
             --glass-bg: rgba(255, 255, 255, 0.85);
-            --glass-border: rgba(0, 0, 0, 0.05);
-            --glass-shadow: 0 8px 25px 0 rgba(0, 0, 0, 0.05);
+            --glass-border: rgba(0, 0, 0, 0.15);
             --text-main: #0f172a;
-            --text-sub: #64748b;
+            --text-sub: #475569;
             --accent-color: #0284c7;
         }
 
         /* =========================================
-           2. Global Settings (รีเซ็ตและแอนิเมชัน)
+           2. Global Reset & Base
            ========================================= */
-        * { box-sizing: border-box; transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease; }
+        * { box-sizing: border-box; transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
         
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: var(--bg-page); 
             color: var(--text-main);
             margin: 0; 
-            padding: 2vh 2vw;
+            /* ใช้ dvh เพื่อให้พอดีจอแม้ในมือถือที่มีแถบ URL */
             height: 100dvh; 
+            width: 100vw;
+            padding: 1.5vh 1.5vw;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* ค่าเริ่มต้น Desktop ไม่ให้มี Scrollbar */
-            background-image: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.08) 0%, transparent 60%);
+            overflow: hidden; /* บังคับไม่ให้เกิด Scrollbar 100% */
+            background-image: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.05) 0%, transparent 50%);
         }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
+        
         /* =========================================
-           3. Header & Navigation
+           3. Header Section (ยืดหยุ่นตามความสูง)
            ========================================= */
         .header {
-            display: flex; flex-direction: column; align-items: center; 
-            margin-bottom: 2vh; position: relative; z-index: 10;
-            animation: fadeUp 0.5s ease-out;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 8vh; min-height: 50px;
+            margin-bottom: 1.5vh;
+            flex-shrink: 0;
         }
         
-        .header-title-box { display: flex; align-items: center; gap: 15px; margin-bottom: 8px; }
+        .header-left { display: flex; align-items: center; gap: 1vw; }
         
         .logo-box {
-            background: #fff; padding: 4px 12px; border-radius: 8px; 
+            background: #fff; padding: 0.5vh 0.8vw; border-radius: 8px; 
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
+        .logo-box img { height: clamp(20px, 3.5vh, 40px); width: auto; object-fit: contain; }
         
-        h1 { 
-            margin: 0; font-size: clamp(1.4rem, 2.5vw, 2rem); 
-            font-weight: 800; color: var(--text-main); letter-spacing: -0.5px; 
-        }
+        h1 { margin: 0; font-size: clamp(1.2rem, 2.5vh, 2rem); font-weight: 700; letter-spacing: -0.5px; }
         
+        .header-right { display: flex; align-items: center; gap: 1vw; }
+
         .status-badge {
             display: inline-flex; align-items: center; gap: 8px;
-            background: var(--glass-bg); padding: 6px 16px; 
-            border-radius: 30px; font-size: 0.85rem; font-weight: 600;
+            background: var(--glass-bg); padding: 0.8vh 1.2vw; 
+            border-radius: 30px; font-size: clamp(0.7rem, 1.5vh, 0.9rem); font-weight: 600;
             border: 1px solid var(--glass-border);
             backdrop-filter: blur(10px);
         }
         
         .status-dot { width: 10px; height: 10px; border-radius: 50%; background-color: var(--status-error); }
-        .status-dot.online { background-color: var(--status-ok); box-shadow: 0 0 12px var(--status-ok); animation: pulse 2s infinite; }
+        .status-dot.online { background-color: var(--status-ok); box-shadow: 0 0 10px var(--status-ok); animation: pulse 2s infinite; }
         
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
             70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
 
         .theme-btn {
-            position: absolute; right: 0; top: 50%; transform: translateY(-50%);
             background: var(--glass-bg); color: var(--text-main);
             border: 1px solid var(--glass-border); border-radius: 50%;
-            width: 44px; height: 44px; cursor: pointer; font-size: 1.2rem;
+            width: clamp(35px, 5vh, 45px); height: clamp(35px, 5vh, 45px); 
+            cursor: pointer; font-size: 1.2rem;
             display: flex; align-items: center; justify-content: center;
-            backdrop-filter: blur(10px); box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(10px); box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .theme-btn:hover { transform: translateY(-50%) scale(1.08); border-color: var(--accent-color); }
+        .theme-btn:hover { transform: scale(1.1); }
 
         /* =========================================
-           4. Layout หลัก (Modern Grid & Flexbox)
+           4. Main Dashboard Grid (หัวใจหลักของ No-Scroll)
            ========================================= */
         .dashboard-main {
-            display: flex; flex-direction: row; flex-grow: 1; gap: 20px; 
-            min-height: 0; width: 100%; max-width: 1600px; margin: 0 auto;
-            animation: fadeUp 0.6s ease-out 0.1s both;
+            display: grid;
+            /* Desktop: ซ้าย 30% ขวา 70% */
+            grid-template-columns: 3fr 7fr;
+            gap: 1.5vw;
+            flex-grow: 1;
+            min-height: 0; /* สำคัญมาก ป้องกัน Flex/Grid overflow */
         }
         
-        /* สไตล์ Card กลาง (Glassmorphism) */
         .glass-card {
-            background: var(--glass-bg); border-radius: 24px; 
+            background: var(--glass-bg); border-radius: 20px; 
             border: 1px solid var(--glass-border);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            box-shadow: var(--glass-shadow);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 1.5vh 1vw; min-height: 0; cursor: pointer;
+        }
+        .glass-card:hover { border-color: var(--accent-color); }
+
+        /* กล่องคุมความสูง Canvas ให้พอดี Grid */
+        .gauge-wrapper {
+            flex-grow: 1; width: 100%; min-height: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        /* บังคับให้ Canvas ย่อ-ขยายตัวเองตามกรอบ */
+        canvas {
+            max-width: 100% !important;
+            max-height: 100% !important;
+            width: auto !important;
+            height: auto !important;
+            object-fit: contain;
         }
 
         .card-title {
-            font-size: clamp(0.9rem, 1.5vw, 1.1rem); font-weight: 700; color: var(--accent-color); 
-            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; text-align: center;
+            font-size: clamp(0.8rem, 2vh, 1.2rem); font-weight: 700; color: var(--accent-color); 
+            text-transform: uppercase; margin-bottom: 0.5vh; text-align: center;
         }
+        .card-status { font-size: clamp(0.7rem, 1.5vh, 0.9rem); font-weight: 600; margin-bottom: 1vh; text-align: center; }
+        
+        .text-ok { color: var(--status-ok); }
+        .text-err { color: var(--status-error); }
 
-        .card-status { font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; padding: 2px 10px; border-radius: 12px; }
-        .text-ok { color: var(--status-ok); background: rgba(16, 185, 129, 0.1); }
-        .text-err { color: var(--status-error); background: rgba(239, 68, 68, 0.1); }
-
-        /* โซนซ้าย: Main Header */
-        .main-panel { flex: 0 0 320px; padding: 25px; cursor: pointer; }
-        .main-panel:hover { border-color: var(--accent-color); transform: translateY(-2px); }
-
-        /* โซนขวา: 8 Gates (Responsive Grid) */
+        /* โซนขวา: 8 Gates */
         .gates-panel {
-            flex-grow: 1; display: grid; 
+            display: grid; 
             grid-template-columns: repeat(4, 1fr);
             grid-template-rows: repeat(2, 1fr); 
-            gap: 15px; 
+            gap: 1.5vh 1vw; min-height: 0;
         }
 
-        .gate-card {
-            padding: 15px 10px; cursor: pointer;
-        }
-        .gate-card:hover { transform: scale(1.02); border-color: var(--accent-color); }
-
-        /* 🔥 ไฮไลท์เทคนิค: Responsive Canvas Gauges */
-        /* บังคับให้ Canvas ขยายตามช่อง Grid แทนการกำหนด Fix Pixel */
-        canvas {
-            width: 100% !important; 
-            height: auto !important; 
-            object-fit: contain;
-            aspect-ratio: 1 / 1;
-        }
-        .main-panel canvas { max-width: 250px; }
-        .gate-card canvas { max-width: 150px; }
-
-        /* =========================================
-           5. Visual Alerts (แจ้งเตือน)
-           ========================================= */
-        .gate-card.alert {
-            animation: borderGlow 1.5s ease-in-out infinite;
-        }
+        /* เอฟเฟกต์แจ้งเตือน */
+        .alert { animation: borderGlow 1.5s ease-in-out infinite; }
         @keyframes borderGlow {
-            0% { border-color: rgba(239, 68, 68, 0.3); box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
-            50% { border-color: var(--status-error); box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
-            100% { border-color: rgba(239, 68, 68, 0.3); box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+            0% { border-color: rgba(239, 68, 68, 0.5); box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
+            50% { border-color: var(--status-error); box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+            100% { border-color: rgba(239, 68, 68, 0.5); box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
         }
 
         /* =========================================
-           6. Modal Chart (Popup กราฟ)
+           5. Responsive Breakpoints (Tablet & Mobile)
+           ========================================= */
+        /* Tablet Portrait */
+        @media (max-width: 1024px) {
+            body { padding: 2vh 2vw; }
+            .dashboard-main {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 2.5fr; /* บน 1 ส่วน, ล่าง 2.5 ส่วน */
+                gap: 1.5vh;
+            }
+            .gates-panel {
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(2, 1fr);
+            }
+        }
+
+        /* Mobile */
+        @media (max-width: 768px) {
+            .header { flex-direction: column; height: auto; gap: 1vh; margin-bottom: 2vh; }
+            .header-right { width: 100%; justify-content: space-between; }
+            .dashboard-main {
+                grid-template-rows: 1fr 3fr; /* จัดพื้นที่ให้เกจย่อยมากขึ้น */
+            }
+            .gates-panel {
+                /* ปรับเป็น 2 คอลัมน์ 4 แถว เพื่อให้พอดีจอมือถือแนวตั้ง */
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+            }
+        }
+
+        /* =========================================
+           6. Modal Chart
            ========================================= */
         .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(6px);
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
             z-index: 1000; justify-content: center; align-items: center;
             opacity: 0; transition: opacity 0.3s ease;
         }
         .modal.show { display: flex; opacity: 1; }
         
         .modal-content {
-            background: var(--bg-page); width: 90%; max-width: 1000px; height: 70vh;
-            border-radius: 24px; padding: 25px; border: 1px solid var(--glass-border);
+            background: var(--bg-page); width: 90vw; max-width: 1000px; height: 70vh;
+            border-radius: 20px; padding: 2.5vh 2vw; border: 1px solid var(--glass-border);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             display: flex; flex-direction: column; position: relative;
             transform: scale(0.95); transition: transform 0.3s ease;
@@ -201,82 +222,59 @@
         .modal.show .modal-content { transform: scale(1); }
         
         .close-btn {
-            position: absolute; top: 20px; right: 25px; font-size: 2rem; color: var(--text-sub);
+            position: absolute; top: 2vh; right: 2vw; font-size: 2rem; color: var(--text-sub);
             cursor: pointer; background: none; border: none; padding: 0; line-height: 1;
         }
-        .close-btn:hover { color: var(--status-error); transform: scale(1.1); }
-        
-        .chart-wrapper { position: relative; flex-grow: 1; width: 100%; min-height: 0; margin-top: 15px; }
-
-        /* =========================================
-           7. Responsive Media Queries (จัด Layout ตามจอ)
-           ========================================= */
-        @media (max-width: 1200px) {
-            .main-panel { flex: 0 0 260px; }
-        }
-
-        @media (max-width: 992px) {
-            /* Tablet Landscape / เล็กกว่า Desktop */
-            body { height: auto; overflow-y: auto; } /* ปลดล็อก Scroll แนวตั้ง */
-            .dashboard-main { flex-direction: column; }
-            .main-panel { flex: none; width: 100%; max-width: 400px; margin: 0 auto; padding: 20px; }
-            .gates-panel { 
-                grid-template-columns: repeat(3, 1fr); /* ปรับเป็น 3 คอลัมน์ */
-                grid-template-rows: auto;
-            }
-            .theme-btn { top: 0; transform: none; }
-        }
-
-        @media (max-width: 768px) {
-            /* Mobile / Tablet Portrait */
-            .gates-panel { grid-template-columns: repeat(2, 1fr); /* ปรับเป็น 2 คอลัมน์ */ }
-            .modal-content { height: 50vh; padding: 15px; }
-            .close-btn { top: 10px; right: 15px; }
-        }
+        .close-btn:hover { color: var(--status-error); }
+        .chart-wrapper { position: relative; flex-grow: 1; width: 100%; min-height: 0; margin-top: 1.5vh; }
     </style>
 </head>
 <body>
 
     <!-- Header Section -->
     <header class="header">
-        <div class="header-title-box">
+        <div class="header-left">
             <div class="logo-box">
-                <!-- ใช้งาน Direct Link Google Drive แปลงรหัส id เรียบร้อยแล้ว -->
-                <img src="https://drive.google.com/uc?export=view&id=12MDk3Jp_5G4t7Yi4OqSXyTICgbBV6err" alt="SCG" style="height: 35px; object-fit: contain;">
+                <!-- ดึงโลโก้ SCG จากโฟลเดอร์ใน GitHub (ต้องชื่อไฟล์ตรงกัน) -->
+                <img src="scg-logo.png" alt="SCG" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/SCG_logo.svg/512px-SCG_logo.svg.png'">
             </div>
-            <h1>CM 10-11 Bag Filter Purge</h1>
+            <h1>CM 10-11 Bag Filter</h1>
         </div>
         
-        <div class="status-badge">
-            <div class="status-dot" id="mqtt-dot"></div>
-            <span id="mqtt-text">Connecting...</span>
+        <div class="header-right">
+            <div class="status-badge">
+                <div class="status-dot" id="mqtt-dot"></div>
+                <span id="mqtt-text">Connecting...</span>
+            </div>
+            <button class="theme-btn" onclick="toggleTheme()" title="Switch Theme">☀️</button>
         </div>
-        
-        <button class="theme-btn" onclick="toggleTheme()" title="Switch Theme">☀️</button>
     </header>
 
-    <!-- Main Dashboard Area -->
+    <!-- Main Dashboard Area (No Scroll Grid) -->
     <main class="dashboard-main">
         
-        <!-- โซนซ้าย: Main Header -->
-        <div class="glass-card main-panel" onclick="openChartModal('av', 'Main Header (AV)', '#38bdf8')">
+        <!-- Left: Main Header Pressure -->
+        <div class="glass-card" onclick="openChartModal('av', 'Main Header (AV)', '#38bdf8')">
             <div class="card-title">Main Header</div>
-            <div class="card-status text-ok" id="status-av">Standby</div>
-            <canvas id="gauge-av"></canvas>
+            <div class="card-status text-ok" id="status-av">System Normal</div>
+            <div class="gauge-wrapper">
+                <!-- สร้าง Base ขนาดไว้ใหญ่ๆ CSS จะบีบให้เล็กลงพอดีกล่องเอง -->
+                <canvas id="gauge-av"></canvas>
+            </div>
         </div>
 
-        <!-- โซนขวา: 8 Gates Grid -->
+        <!-- Right: 8 Gates Grid -->
         <div class="gates-panel" id="gates-container">
-            <!-- JavaScript จะทำการ Render ช่อง Gate ทั้ง 8 อัตโนมัติ -->
+            <!-- JavaScript จะสร้าง HTML ให้อัตโนมัติ -->
         </div>
 
     </main>
 
-    <!-- Modal Chart (Popup) -->
+    <!-- Modal Chart -->
     <div class="modal" id="chartModal" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-btn" onclick="closeModal(event)">&times;</button>
-            <div class="card-title" id="modalTitle">Loading History...</div>
+            <div class="card-title" id="modalTitle" style="font-size: 1.5rem;">Loading History...</div>
             <div class="chart-wrapper">
                 <canvas id="historyChart"></canvas>
             </div>
@@ -297,15 +295,15 @@
             
             const isLight = currentTheme === 'light';
             const titleColor = isLight ? '#0f172a' : '#f8fafc';
-            const numColor = isLight ? '#64748b' : '#94a3b8';
+            const numColor = isLight ? '#475569' : '#94a3b8';
+            const tickColor = isLight ? '#94a3b8' : '#64748b';
 
-            // สั่งอัพเดทสีใน Canvas Gauge ทันทีที่เปลี่ยนโหมด
             document.gauges.forEach(gauge => {
                 gauge.update({
                     colorTitle: titleColor,
                     colorNumbers: numColor,
-                    colorMajorTicks: numColor,
-                    colorMinorTicks: numColor,
+                    colorMajorTicks: tickColor,
+                    colorMinorTicks: tickColor,
                     colorValueText: titleColor
                 });
             });
@@ -318,44 +316,49 @@
             }
         }
 
-        // --- 2. ฟังก์ชันสร้าง Gauge อัตโนมัติ (Dynamic Rendering) ---
+        // --- 2. ฟังก์ชันสร้าง Gauge อัตโนมัติ (Responsive Fit) ---
         const gatesConfig = [
-            { id: 'p1', name: '6526.04' }, { id: 'p2', name: '6524.041' },
-            { id: 'p3', name: '6526.08' }, { id: 'p4', name: '6536.04' },
-            { id: 'p5', name: '6536.041' }, { id: 'p6', name: '6536.08' },
-            { id: 'p7', name: '6511.76' }, { id: 'p8', name: '6511.80' }
+            { id: 'p1', name: '6526.04', color: '#38bdf8' },
+            { id: 'p2', name: '6524.041', color: '#38bdf8' },
+            { id: 'p3', name: '6526.08', color: '#38bdf8' },
+            { id: 'p4', name: '6536.04', color: '#38bdf8' },
+            { id: 'p5', name: '6536.041', color: '#38bdf8' },
+            { id: 'p6', name: '6536.08', color: '#38bdf8' },
+            { id: 'p7', name: '6511.76', color: '#38bdf8' },
+            { id: 'p8', name: '6511.80', color: '#38bdf8' }
         ];
 
         const container = document.getElementById('gates-container');
         
-        // สร้าง HTML Card สำหรับ Gate
         gatesConfig.forEach((gate) => {
             const html = `
-                <div class="glass-card gate-card" id="card-${gate.id}" onclick="openChartModal('${gate.id}', 'Gate ${gate.name}', '#38bdf8')">
+                <div class="glass-card" id="card-${gate.id}" onclick="openChartModal('${gate.id}', 'Gate ${gate.name}', '${gate.color}')">
                     <div class="card-title">${gate.name}</div>
                     <div class="card-status text-ok" id="status-${gate.id}">Wait...</div>
-                    <canvas id="gauge-${gate.id}"></canvas>
+                    <div class="gauge-wrapper">
+                        <canvas id="gauge-${gate.id}"></canvas>
+                    </div>
                 </div>
             `;
             container.innerHTML += html;
         });
 
-        // ฟังก์ชันตั้งค่า Gauge (Render High-Res ล่วงหน้า แล้วให้ CSS ย่อสเกลเพื่อความคมชัด)
+        // ฟังก์ชันตั้งค่าหน้าปัด (ใส่ค่า 400 เผื่อไว้ CSS จะปรับขนาดให้ฟิตกล่องเอง)
         function initGauge(elementId) {
             let el = document.getElementById(elementId);
             el.setAttribute('data-type', 'radial-gauge');
-            el.setAttribute('data-width', '300'); // วาดความละเอียดสูง (300px) CSS จะบีบลงเอง
-            el.setAttribute('data-height', '300');
+            el.setAttribute('data-width', '400'); 
+            el.setAttribute('data-height', '400');
             el.setAttribute('data-min-value', '0');
             el.setAttribute('data-max-value', '10');
             el.setAttribute('data-major-ticks', '0,2,4,6,8,10');
             el.setAttribute('data-minor-ticks', '2');
             el.setAttribute('data-stroke-ticks', 'true');
-            // สีแถบสถานะ (แดง = อันตราย, เขียว = ปกติ)
+            // สีทึบ 100%
             el.setAttribute('data-highlights', '[ {"from": 0, "to": 4, "color": "#ef4444"}, {"from": 4, "to": 10, "color": "#10b981"} ]');
             el.setAttribute('data-color-plate', 'transparent');
-            el.setAttribute('data-color-major-ticks', '#94a3b8');
-            el.setAttribute('data-color-minor-ticks', '#94a3b8');
+            el.setAttribute('data-color-major-ticks', '#64748b');
+            el.setAttribute('data-color-minor-ticks', '#64748b');
             el.setAttribute('data-color-title', '#f8fafc');
             el.setAttribute('data-color-numbers', '#94a3b8');
             el.setAttribute('data-value-box', 'true');
@@ -368,7 +371,7 @@
         initGauge('gauge-av');
         gatesConfig.forEach(gate => initGauge(`gauge-${gate.id}`));
 
-        // --- 3. MQTT Connection & Live Updates ---
+        // --- 3. MQTT Connection ---
         const broker = "4d79d42984154e37aab32ca068370f40.s1.eu.hivemq.cloud";
         const port = 8884; 
         const topic = "factory/bagfilter/pressures";
@@ -382,7 +385,7 @@
 
         client.onConnectionLost = function() {
             mqttDot.classList.remove("online");
-            mqttText.innerText = "Offline - Reconnecting";
+            mqttText.innerText = "Offline - Retry...";
             setTimeout(connectMQTT, 5000);
         };
 
@@ -390,29 +393,41 @@
             try {
                 const data = JSON.parse(message.payloadString);
                 
-                // ฟังก์ชันอัพเดทค่าและสลับ UI แจ้งเตือน
-                const updateUI = (id, val, isMain = false) => {
-                    const prefix = isMain ? '' : 'card-';
-                    document.getElementById(`gauge-${id}`).setAttribute('data-value', val.toFixed(2));
-                    
-                    const card = document.getElementById(`${prefix}${id}`);
+                // อัพเดท Main AV
+                document.getElementById('gauge-av').setAttribute('data-value', data.av.toFixed(2));
+                const avStatus = document.getElementById('status-av');
+                if (data.av < 4) {
+                    avStatus.innerText = "Low Pressure";
+                    avStatus.className = "card-status text-err";
+                    document.getElementById('gauge-av').parentElement.parentElement.classList.add('alert');
+                } else {
+                    avStatus.innerText = "System Normal";
+                    avStatus.className = "card-status text-ok";
+                    document.getElementById('gauge-av').parentElement.parentElement.classList.remove('alert');
+                }
+                
+                // อัพเดท Gate ทั้ง 8
+                const updateGateUI = (id, val) => {
+                    document.getElementById(`gauge-${id}`).setAttribute('data-value', val);
+                    const card = document.getElementById(`card-${id}`);
                     const statusText = document.getElementById(`status-${id}`);
                     
                     if (val < 4) {
-                        if(!isMain) card.classList.add('alert');
+                        card.classList.add('alert');
                         statusText.innerText = "Low Pressure";
                         statusText.className = "card-status text-err";
                     } else {
-                        if(!isMain) card.classList.remove('alert');
+                        card.classList.remove('alert');
                         statusText.innerText = "Normal";
                         statusText.className = "card-status text-ok";
                     }
                 };
 
-                updateUI('av', data.av, true);
-                gatesConfig.forEach((gate, idx) => updateUI(gate.id, data[`p${idx+1}`]));
+                gatesConfig.forEach((gate, idx) => {
+                    updateGateUI(gate.id, data[`p${idx+1}`]);
+                });
                 
-            } catch(e) { console.error("Data Parse Error:", e); }
+            } catch(e) { console.error(e); }
         };
 
         function connectMQTT() {
@@ -428,7 +443,7 @@
         }
         connectMQTT();
 
-        // --- 4. ดึงข้อมูลประวัติ (Google Sheets) แบบ Background ---
+        // --- 4. ดึงข้อมูล 48 ชม. สำหรับกราฟ ---
         let globalHistory = [];
         const sheetURL = "https://script.google.com/macros/s/AKfycbwkMTHj9lhFm79HaQTtLE4tC77O1ILsmazRb6s5tPdamXZct9hlC7sEwc9Xb3l4XydN/exec";
 
@@ -436,11 +451,11 @@
             try {
                 const res = await fetch(sheetURL);
                 globalHistory = await res.json();
-            } catch (err) { console.error('Fetch Error:', err); }
+            } catch (err) {}
         }
         fetchHistory(); 
 
-        // --- 5. จัดการกราฟใน Popup Modal ---
+        // --- 5. Chart Modal Logic ---
         Chart.defaults.font.family = "'Inter', sans-serif";
         let chartInstance = null;
 
@@ -451,7 +466,7 @@
             modal.classList.add('show');
             
             if (globalHistory.length === 0) {
-                titleEl.innerText = "Loading data from Database... Please wait.";
+                titleEl.innerText = "Loading data from database... Please wait.";
                 return;
             }
             
