@@ -49,24 +49,21 @@
             background-color: var(--bg-page); 
             color: var(--text-main);
             margin: 0; 
-            /* ใช้ dvh เพื่อให้พอดีจอแม้ในมือถือที่มีแถบ URL */
             height: 100dvh; 
             width: 100vw;
             padding: 1.5vh 1.5vw;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* บังคับไม่ให้เกิด Scrollbar 100% */
+            overflow: hidden; 
             background-image: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.05) 0%, transparent 50%);
         }
         
         /* =========================================
-           3. Header Section (ยืดหยุ่นตามความสูง)
+           3. Header Section 
            ========================================= */
         .header {
             display: flex; align-items: center; justify-content: space-between;
-            height: 8vh; min-height: 50px;
-            margin-bottom: 1.5vh;
-            flex-shrink: 0;
+            height: 8vh; min-height: 45px; margin-bottom: 1vh; flex-shrink: 0;
         }
         
         .header-left { display: flex; align-items: center; gap: 1vw; }
@@ -76,9 +73,9 @@
             display: flex; align-items: center; justify-content: center;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .logo-box img { height: clamp(20px, 3.5vh, 40px); width: auto; object-fit: contain; }
+        .logo-box img { height: clamp(20px, 3vh, 35px); width: auto; object-fit: contain; }
         
-        h1 { margin: 0; font-size: clamp(1.2rem, 2.5vh, 2rem); font-weight: 700; letter-spacing: -0.5px; }
+        h1 { margin: 0; font-size: clamp(1.2rem, 2.2vh, 1.8rem); font-weight: 700; letter-spacing: -0.5px; }
         
         .header-right { display: flex; align-items: center; gap: 1vw; }
 
@@ -102,7 +99,7 @@
         .theme-btn {
             background: var(--glass-bg); color: var(--text-main);
             border: 1px solid var(--glass-border); border-radius: 50%;
-            width: clamp(35px, 5vh, 45px); height: clamp(35px, 5vh, 45px); 
+            width: clamp(35px, 4.5vh, 45px); height: clamp(35px, 4.5vh, 45px); 
             cursor: pointer; font-size: 1.2rem;
             display: flex; align-items: center; justify-content: center;
             backdrop-filter: blur(10px); box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -110,46 +107,51 @@
         .theme-btn:hover { transform: scale(1.1); }
 
         /* =========================================
-           4. Main Dashboard Grid (หัวใจหลักของ No-Scroll)
+           4. Main Dashboard Grid 
            ========================================= */
         .dashboard-main {
             display: grid;
-            /* Desktop: ซ้าย 30% ขวา 70% */
             grid-template-columns: 3fr 7fr;
-            gap: 1.5vw;
+            gap: 1vw;
             flex-grow: 1;
-            min-height: 0; /* สำคัญมาก ป้องกัน Flex/Grid overflow */
+            min-height: 0; 
         }
         
         .glass-card {
-            background: var(--glass-bg); border-radius: 20px; 
+            background: var(--glass-bg); border-radius: 16px; 
             border: 1px solid var(--glass-border);
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 1.5vh 1vw; min-height: 0; cursor: pointer;
+            /* ปรับ padding ให้เล็กลง เพื่อเพิ่มพื้นที่ให้ Gauge */
+            padding: 1vh 1vw; min-height: 0; cursor: pointer;
         }
         .glass-card:hover { border-color: var(--accent-color); }
 
-        /* กล่องคุมความสูง Canvas ให้พอดี Grid */
+        /* กล่องคุมความสูง Canvas ให้ขยายเต็ม 100% */
         .gauge-wrapper {
-            flex-grow: 1; width: 100%; min-height: 0;
+            flex-grow: 1; width: 100%; height: 100%; min-height: 0;
             display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
         }
-        /* บังคับให้ Canvas ย่อ-ขยายตัวเองตามกรอบ */
+        
+        /* บังคับให้ Canvas ขยายตัวเต็มกล่อง แต่รักษาสัดส่วน */
         canvas {
+            width: 100% !important;
+            height: 100% !important;
             max-width: 100% !important;
             max-height: 100% !important;
-            width: auto !important;
-            height: auto !important;
             object-fit: contain;
         }
 
         .card-title {
-            font-size: clamp(0.8rem, 2vh, 1.2rem); font-weight: 700; color: var(--accent-color); 
-            text-transform: uppercase; margin-bottom: 0.5vh; text-align: center;
+            font-size: clamp(0.75rem, 1.8vh, 1.1rem); font-weight: 700; color: var(--accent-color); 
+            text-transform: uppercase; margin-bottom: 2px; text-align: center;
         }
-        .card-status { font-size: clamp(0.7rem, 1.5vh, 0.9rem); font-weight: 600; margin-bottom: 1vh; text-align: center; }
+        .card-status { 
+            font-size: clamp(0.65rem, 1.5vh, 0.9rem); font-weight: 600; 
+            margin-bottom: 5px; text-align: center; 
+        }
         
         .text-ok { color: var(--status-ok); }
         .text-err { color: var(--status-error); }
@@ -159,10 +161,9 @@
             display: grid; 
             grid-template-columns: repeat(4, 1fr);
             grid-template-rows: repeat(2, 1fr); 
-            gap: 1.5vh 1vw; min-height: 0;
+            gap: 1vh 1vw; min-height: 0;
         }
 
-        /* เอฟเฟกต์แจ้งเตือน */
         .alert { animation: borderGlow 1.5s ease-in-out infinite; }
         @keyframes borderGlow {
             0% { border-color: rgba(239, 68, 68, 0.5); box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
@@ -173,12 +174,11 @@
         /* =========================================
            5. Responsive Breakpoints (Tablet & Mobile)
            ========================================= */
-        /* Tablet Portrait */
         @media (max-width: 1024px) {
-            body { padding: 2vh 2vw; }
+            body { padding: 1.5vh 2vw; }
             .dashboard-main {
                 grid-template-columns: 1fr;
-                grid-template-rows: 1fr 2.5fr; /* บน 1 ส่วน, ล่าง 2.5 ส่วน */
+                grid-template-rows: 1.2fr 3fr; 
                 gap: 1.5vh;
             }
             .gates-panel {
@@ -187,17 +187,22 @@
             }
         }
 
-        /* Mobile */
         @media (max-width: 768px) {
-            .header { flex-direction: column; height: auto; gap: 1vh; margin-bottom: 2vh; }
-            .header-right { width: 100%; justify-content: space-between; }
+            .header { flex-direction: row; height: auto; margin-bottom: 1.5vh; }
+            h1 { font-size: clamp(1rem, 2vh, 1.2rem); }
             .dashboard-main {
-                grid-template-rows: 1fr 3fr; /* จัดพื้นที่ให้เกจย่อยมากขึ้น */
+                /* แบ่งพื้นที่แนวตั้ง: Main = ส่วนน้อย, Gates = ส่วนมาก */
+                grid-template-rows: 1fr 3.5fr; 
+                gap: 1vh;
             }
             .gates-panel {
-                /* ปรับเป็น 2 คอลัมน์ 4 แถว เพื่อให้พอดีจอมือถือแนวตั้ง */
+                /* ปรับเป็น 2 คอลัมน์ 4 แถว เพื่อให้เรียงแนวตั้งได้ขนาดใหญ่ขึ้น */
                 grid-template-columns: repeat(2, 1fr);
                 grid-template-rows: repeat(4, 1fr);
+                gap: 1vh;
+            }
+            .glass-card {
+                padding: 6px; /* บีบ Padding ให้เล็กที่สุด เพื่อขยายเกจ */
             }
         }
 
@@ -222,11 +227,11 @@
         .modal.show .modal-content { transform: scale(1); }
         
         .close-btn {
-            position: absolute; top: 2vh; right: 2vw; font-size: 2rem; color: var(--text-sub);
+            position: absolute; top: 2vh; right: 3vw; font-size: 2.5rem; color: var(--text-sub);
             cursor: pointer; background: none; border: none; padding: 0; line-height: 1;
         }
         .close-btn:hover { color: var(--status-error); }
-        .chart-wrapper { position: relative; flex-grow: 1; width: 100%; min-height: 0; margin-top: 1.5vh; }
+        .chart-wrapper { position: relative; flex-grow: 1; width: 100%; min-height: 0; margin-top: 2vh; }
     </style>
 </head>
 <body>
@@ -235,7 +240,6 @@
     <header class="header">
         <div class="header-left">
             <div class="logo-box">
-                <!-- ดึงโลโก้ SCG จากโฟลเดอร์ใน GitHub (ต้องชื่อไฟล์ตรงกัน) -->
                 <img src="scg-logo.png" alt="SCG" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/SCG_logo.svg/512px-SCG_logo.svg.png'">
             </div>
             <h1>CM 10-11 Bag Filter</h1>
@@ -250,7 +254,7 @@
         </div>
     </header>
 
-    <!-- Main Dashboard Area (No Scroll Grid) -->
+    <!-- Main Dashboard Area -->
     <main class="dashboard-main">
         
         <!-- Left: Main Header Pressure -->
@@ -258,7 +262,6 @@
             <div class="card-title">Main Header</div>
             <div class="card-status text-ok" id="status-av">System Normal</div>
             <div class="gauge-wrapper">
-                <!-- สร้าง Base ขนาดไว้ใหญ่ๆ CSS จะบีบให้เล็กลงพอดีกล่องเอง -->
                 <canvas id="gauge-av"></canvas>
             </div>
         </div>
@@ -274,7 +277,7 @@
     <div class="modal" id="chartModal" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-btn" onclick="closeModal(event)">&times;</button>
-            <div class="card-title" id="modalTitle" style="font-size: 1.5rem;">Loading History...</div>
+            <div class="card-title" id="modalTitle" style="font-size: clamp(1rem, 2.5vh, 1.5rem);">Loading History...</div>
             <div class="chart-wrapper">
                 <canvas id="historyChart"></canvas>
             </div>
@@ -316,7 +319,7 @@
             }
         }
 
-        // --- 2. ฟังก์ชันสร้าง Gauge อัตโนมัติ (Responsive Fit) ---
+        // --- 2. ฟังก์ชันสร้าง Gauge อัตโนมัติ ---
         const gatesConfig = [
             { id: 'p1', name: '6526.04', color: '#38bdf8' },
             { id: 'p2', name: '6524.041', color: '#38bdf8' },
@@ -343,18 +346,17 @@
             container.innerHTML += html;
         });
 
-        // ฟังก์ชันตั้งค่าหน้าปัด (ใส่ค่า 400 เผื่อไว้ CSS จะปรับขนาดให้ฟิตกล่องเอง)
+        // ฟังก์ชันตั้งค่าหน้าปัด (เรนเดอร์ขนาด 300 ให้ภาพคมชัด CSS จะย่อ/ขยายให้พอดีเอง)
         function initGauge(elementId) {
             let el = document.getElementById(elementId);
             el.setAttribute('data-type', 'radial-gauge');
-            el.setAttribute('data-width', '400'); 
-            el.setAttribute('data-height', '400');
+            el.setAttribute('data-width', '300'); 
+            el.setAttribute('data-height', '300');
             el.setAttribute('data-min-value', '0');
             el.setAttribute('data-max-value', '10');
             el.setAttribute('data-major-ticks', '0,2,4,6,8,10');
             el.setAttribute('data-minor-ticks', '2');
             el.setAttribute('data-stroke-ticks', 'true');
-            // สีทึบ 100%
             el.setAttribute('data-highlights', '[ {"from": 0, "to": 4, "color": "#ef4444"}, {"from": 4, "to": 10, "color": "#10b981"} ]');
             el.setAttribute('data-color-plate', 'transparent');
             el.setAttribute('data-color-major-ticks', '#64748b');
