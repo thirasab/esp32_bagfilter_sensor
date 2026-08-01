@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CM 10-11 Bag Filter Dashboard</title>
     
-    <!-- ฟอนต์ Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- ฟอนต์ Inter (Modern UI Font) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     
     <!-- ไลบรารี -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
@@ -15,81 +15,90 @@
 
     <style>
         /* =========================================
-           1. ตัวแปรสีและธีม (Design Tokens)
+           1. Design Tokens (ระบบสีและธีม)
            ========================================= */
         :root {
-            /* ธีมมืด (Default) */
+            /* ธีมมืด (Dark Mode) - เน้นความพรีเมียม สบายตา */
             --bg-page: #0f172a;
-            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-bg: rgba(30, 41, 59, 0.6);
             --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
             --text-main: #f8fafc;
             --text-sub: #94a3b8;
             --accent-color: #38bdf8;
             --status-ok: #10b981;
             --status-error: #ef4444;
-            --gauge-bg: transparent;
         }
 
         [data-theme="light"] {
-            /* ธีมสว่าง */
+            /* ธีมสว่าง (Light Mode) - เน้นความสะอาดตาทางการ */
             --bg-page: #f1f5f9;
             --glass-bg: rgba(255, 255, 255, 0.85);
-            --glass-border: rgba(0, 0, 0, 0.1);
+            --glass-border: rgba(0, 0, 0, 0.05);
+            --glass-shadow: 0 8px 25px 0 rgba(0, 0, 0, 0.05);
             --text-main: #0f172a;
             --text-sub: #64748b;
             --accent-color: #0284c7;
-            --gauge-bg: transparent;
         }
 
         /* =========================================
-           2. ตั้งค่าพื้นฐาน (Base Styles)
+           2. Global Settings (รีเซ็ตและแอนิเมชัน)
            ========================================= */
-        * { box-sizing: border-box; transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
+        * { box-sizing: border-box; transition: background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease; }
         
         body { 
             font-family: 'Inter', sans-serif; 
             background-color: var(--bg-page); 
             color: var(--text-main);
             margin: 0; 
-            padding: 15px 20px;
+            padding: 2vh 2vw;
             height: 100dvh; 
             display: flex;
             flex-direction: column;
-            overflow: hidden; 
-            background-image: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.05) 0%, transparent 50%);
+            overflow: hidden; /* ค่าเริ่มต้น Desktop ไม่ให้มี Scrollbar */
+            background-image: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.08) 0%, transparent 60%);
         }
-        
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* =========================================
-           3. ส่วนหัว (Header)
+           3. Header & Navigation
            ========================================= */
         .header {
             display: flex; flex-direction: column; align-items: center; 
-            margin-bottom: 15px; position: relative; z-index: 10;
+            margin-bottom: 2vh; position: relative; z-index: 10;
+            animation: fadeUp 0.5s ease-out;
         }
         
         .header-title-box { display: flex; align-items: center; gap: 15px; margin-bottom: 8px; }
         
         .logo-box {
-            background: #fff; padding: 5px 12px; border-radius: 8px; 
+            background: #fff; padding: 4px 12px; border-radius: 8px; 
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         
-        h1 { margin: 0; font-size: 1.8rem; font-weight: 700; color: var(--text-main); letter-spacing: -0.5px; }
+        h1 { 
+            margin: 0; font-size: clamp(1.4rem, 2.5vw, 2rem); 
+            font-weight: 800; color: var(--text-main); letter-spacing: -0.5px; 
+        }
         
         .status-badge {
             display: inline-flex; align-items: center; gap: 8px;
-            background: var(--glass-bg); padding: 5px 16px; 
+            background: var(--glass-bg); padding: 6px 16px; 
             border-radius: 30px; font-size: 0.85rem; font-weight: 600;
             border: 1px solid var(--glass-border);
             backdrop-filter: blur(10px);
         }
         
         .status-dot { width: 10px; height: 10px; border-radius: 50%; background-color: var(--status-error); }
-        .status-dot.online { background-color: var(--status-ok); box-shadow: 0 0 10px var(--status-ok); animation: pulse 2s infinite; }
+        .status-dot.online { background-color: var(--status-ok); box-shadow: 0 0 12px var(--status-ok); animation: pulse 2s infinite; }
         
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
             70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
             100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
         }
@@ -98,73 +107,85 @@
             position: absolute; right: 0; top: 50%; transform: translateY(-50%);
             background: var(--glass-bg); color: var(--text-main);
             border: 1px solid var(--glass-border); border-radius: 50%;
-            width: 40px; height: 40px; cursor: pointer; font-size: 1.2rem;
+            width: 44px; height: 44px; cursor: pointer; font-size: 1.2rem;
             display: flex; align-items: center; justify-content: center;
-            backdrop-filter: blur(10px); box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px); box-shadow: var(--glass-shadow);
         }
-        .theme-btn:hover { transform: translateY(-50%) scale(1.1); }
+        .theme-btn:hover { transform: translateY(-50%) scale(1.08); border-color: var(--accent-color); }
 
         /* =========================================
-           4. โครงสร้างหลัก (Layout & Cards)
+           4. Layout หลัก (Modern Grid & Flexbox)
            ========================================= */
         .dashboard-main {
-            display: flex; flex-direction: row; flex-grow: 1; gap: 20px; min-height: 0;
+            display: flex; flex-direction: row; flex-grow: 1; gap: 20px; 
+            min-height: 0; width: 100%; max-width: 1600px; margin: 0 auto;
+            animation: fadeUp 0.6s ease-out 0.1s both;
         }
         
+        /* สไตล์ Card กลาง (Glassmorphism) */
         .glass-card {
-            background: var(--glass-bg); border-radius: 20px; 
+            background: var(--glass-bg); border-radius: 24px; 
             border: 1px solid var(--glass-border);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
-            display: flex; flex-direction: column; align-items: center;
-            padding: 20px;
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            box-shadow: var(--glass-shadow);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
         .card-title {
-            font-size: 1rem; font-weight: 700; color: var(--accent-color); 
-            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; text-align: center;
+            font-size: clamp(0.9rem, 1.5vw, 1.1rem); font-weight: 700; color: var(--accent-color); 
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; text-align: center;
         }
 
-        .card-status { font-size: 0.85rem; font-weight: 600; margin-bottom: 15px; }
-        .text-ok { color: var(--status-ok); }
-        .text-err { color: var(--status-error); }
+        .card-status { font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; padding: 2px 10px; border-radius: 12px; }
+        .text-ok { color: var(--status-ok); background: rgba(16, 185, 129, 0.1); }
+        .text-err { color: var(--status-error); background: rgba(239, 68, 68, 0.1); }
 
-        .main-panel { flex: 0 0 320px; justify-content: center; cursor: pointer; }
+        /* โซนซ้าย: Main Header */
+        .main-panel { flex: 0 0 320px; padding: 25px; cursor: pointer; }
         .main-panel:hover { border-color: var(--accent-color); transform: translateY(-2px); }
 
+        /* โซนขวา: 8 Gates (Responsive Grid) */
         .gates-panel {
             flex-grow: 1; display: grid; 
             grid-template-columns: repeat(4, 1fr);
             grid-template-rows: repeat(2, 1fr); 
-            gap: 15px; background: transparent; padding: 0; border: none; box-shadow: none; backdrop-filter: none;
+            gap: 15px; 
         }
 
         .gate-card {
-            background: var(--glass-bg); border: 1px solid var(--glass-border);
-            border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 10px; cursor: pointer; backdrop-filter: blur(10px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 15px 10px; cursor: pointer;
         }
-        .gate-card:hover { transform: scale(1.03); border-color: var(--accent-color); }
+        .gate-card:hover { transform: scale(1.02); border-color: var(--accent-color); }
+
+        /* 🔥 ไฮไลท์เทคนิค: Responsive Canvas Gauges */
+        /* บังคับให้ Canvas ขยายตามช่อง Grid แทนการกำหนด Fix Pixel */
+        canvas {
+            width: 100% !important; 
+            height: auto !important; 
+            object-fit: contain;
+            aspect-ratio: 1 / 1;
+        }
+        .main-panel canvas { max-width: 250px; }
+        .gate-card canvas { max-width: 150px; }
 
         /* =========================================
-           5. เอฟเฟกต์แจ้งเตือน (Visual Alerts)
+           5. Visual Alerts (แจ้งเตือน)
            ========================================= */
         .gate-card.alert {
             animation: borderGlow 1.5s ease-in-out infinite;
         }
         @keyframes borderGlow {
-            0% { border-color: rgba(239, 68, 68, 0.5); box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
-            50% { border-color: var(--status-error); box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
-            100% { border-color: rgba(239, 68, 68, 0.5); box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
+            0% { border-color: rgba(239, 68, 68, 0.3); box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+            50% { border-color: var(--status-error); box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
+            100% { border-color: rgba(239, 68, 68, 0.3); box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
         }
 
         /* =========================================
-           6. Modal สำหรับแสดงกราฟ (Popup)
+           6. Modal Chart (Popup กราฟ)
            ========================================= */
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(6px);
             z-index: 1000; justify-content: center; align-items: center;
             opacity: 0; transition: opacity 0.3s ease;
         }
@@ -172,7 +193,7 @@
         
         .modal-content {
             background: var(--bg-page); width: 90%; max-width: 1000px; height: 70vh;
-            border-radius: 20px; padding: 25px; border: 1px solid var(--glass-border);
+            border-radius: 24px; padding: 25px; border: 1px solid var(--glass-border);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             display: flex; flex-direction: column; position: relative;
             transform: scale(0.95); transition: transform 0.3s ease;
@@ -180,18 +201,37 @@
         .modal.show .modal-content { transform: scale(1); }
         
         .close-btn {
-            position: absolute; top: 20px; right: 25px; font-size: 1.8rem; color: var(--text-sub);
+            position: absolute; top: 20px; right: 25px; font-size: 2rem; color: var(--text-sub);
             cursor: pointer; background: none; border: none; padding: 0; line-height: 1;
         }
-        .close-btn:hover { color: var(--status-error); }
+        .close-btn:hover { color: var(--status-error); transform: scale(1.1); }
         
         .chart-wrapper { position: relative; flex-grow: 1; width: 100%; min-height: 0; margin-top: 15px; }
 
-        @media (max-width: 1024px) {
-            .dashboard-main { flex-direction: column; overflow-y: auto; padding-right: 5px; }
-            .main-panel { flex: none; padding: 15px; }
-            .gates-panel { grid-template-columns: repeat(2, 1fr); grid-template-rows: auto; height: auto; }
-            .theme-btn { top: 10px; transform: none; }
+        /* =========================================
+           7. Responsive Media Queries (จัด Layout ตามจอ)
+           ========================================= */
+        @media (max-width: 1200px) {
+            .main-panel { flex: 0 0 260px; }
+        }
+
+        @media (max-width: 992px) {
+            /* Tablet Landscape / เล็กกว่า Desktop */
+            body { height: auto; overflow-y: auto; } /* ปลดล็อก Scroll แนวตั้ง */
+            .dashboard-main { flex-direction: column; }
+            .main-panel { flex: none; width: 100%; max-width: 400px; margin: 0 auto; padding: 20px; }
+            .gates-panel { 
+                grid-template-columns: repeat(3, 1fr); /* ปรับเป็น 3 คอลัมน์ */
+                grid-template-rows: auto;
+            }
+            .theme-btn { top: 0; transform: none; }
+        }
+
+        @media (max-width: 768px) {
+            /* Mobile / Tablet Portrait */
+            .gates-panel { grid-template-columns: repeat(2, 1fr); /* ปรับเป็น 2 คอลัมน์ */ }
+            .modal-content { height: 50vh; padding: 15px; }
+            .close-btn { top: 10px; right: 15px; }
         }
     </style>
 </head>
@@ -201,8 +241,8 @@
     <header class="header">
         <div class="header-title-box">
             <div class="logo-box">
-                <!-- เปลี่ยนไปเรียกใช้ไฟล์จากเครื่อง (Local File) เพื่อแก้ปัญหาโดนบล็อก -->
-                <img src="scg-logo.png" alt="SCG" style="height: 30px;">
+                <!-- ใช้งาน Direct Link Google Drive แปลงรหัส id เรียบร้อยแล้ว -->
+                <img src="https://drive.google.com/uc?export=view&id=12MDk3Jp_5G4t7Yi4OqSXyTICgbBV6err" alt="SCG" style="height: 35px; object-fit: contain;">
             </div>
             <h1>CM 10-11 Bag Filter Purge</h1>
         </div>
@@ -218,21 +258,21 @@
     <!-- Main Dashboard Area -->
     <main class="dashboard-main">
         
-        <!-- Left: Main Header Pressure -->
+        <!-- โซนซ้าย: Main Header -->
         <div class="glass-card main-panel" onclick="openChartModal('av', 'Main Header (AV)', '#38bdf8')">
             <div class="card-title">Main Header</div>
-            <div class="card-status text-ok" id="status-av">System Normal</div>
+            <div class="card-status text-ok" id="status-av">Standby</div>
             <canvas id="gauge-av"></canvas>
         </div>
 
-        <!-- Right: 8 Gates Grid -->
+        <!-- โซนขวา: 8 Gates Grid -->
         <div class="gates-panel" id="gates-container">
-            <!-- สร้างผ่าน JS -->
+            <!-- JavaScript จะทำการ Render ช่อง Gate ทั้ง 8 อัตโนมัติ -->
         </div>
 
     </main>
 
-    <!-- Modal Chart (ซ่อนไว้ เริ่มต้น) -->
+    <!-- Modal Chart (Popup) -->
     <div class="modal" id="chartModal" onclick="closeModal(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
             <button class="close-btn" onclick="closeModal(event)">&times;</button>
@@ -258,14 +298,14 @@
             const isLight = currentTheme === 'light';
             const titleColor = isLight ? '#0f172a' : '#f8fafc';
             const numColor = isLight ? '#64748b' : '#94a3b8';
-            const tickColor = isLight ? '#94a3b8' : '#64748b';
 
+            // สั่งอัพเดทสีใน Canvas Gauge ทันทีที่เปลี่ยนโหมด
             document.gauges.forEach(gauge => {
                 gauge.update({
                     colorTitle: titleColor,
                     colorNumbers: numColor,
-                    colorMajorTicks: tickColor,
-                    colorMinorTicks: tickColor,
+                    colorMajorTicks: numColor,
+                    colorMinorTicks: numColor,
                     colorValueText: titleColor
                 });
             });
@@ -278,23 +318,20 @@
             }
         }
 
-        // --- 2. ฟังก์ชันสร้าง Gauge อัตโนมัติ ---
+        // --- 2. ฟังก์ชันสร้าง Gauge อัตโนมัติ (Dynamic Rendering) ---
         const gatesConfig = [
-            { id: 'p1', name: '6526.04', color: '#38bdf8' },
-            { id: 'p2', name: '6524.041', color: '#38bdf8' },
-            { id: 'p3', name: '6526.08', color: '#38bdf8' },
-            { id: 'p4', name: '6536.04', color: '#38bdf8' },
-            { id: 'p5', name: '6536.041', color: '#38bdf8' },
-            { id: 'p6', name: '6536.08', color: '#38bdf8' },
-            { id: 'p7', name: '6511.76', color: '#38bdf8' },
-            { id: 'p8', name: '6511.80', color: '#38bdf8' }
+            { id: 'p1', name: '6526.04' }, { id: 'p2', name: '6524.041' },
+            { id: 'p3', name: '6526.08' }, { id: 'p4', name: '6536.04' },
+            { id: 'p5', name: '6536.041' }, { id: 'p6', name: '6536.08' },
+            { id: 'p7', name: '6511.76' }, { id: 'p8', name: '6511.80' }
         ];
 
         const container = document.getElementById('gates-container');
         
+        // สร้าง HTML Card สำหรับ Gate
         gatesConfig.forEach((gate) => {
             const html = `
-                <div class="gate-card" id="card-${gate.id}" onclick="openChartModal('${gate.id}', 'Gate ${gate.name}', '${gate.color}')">
+                <div class="glass-card gate-card" id="card-${gate.id}" onclick="openChartModal('${gate.id}', 'Gate ${gate.name}', '#38bdf8')">
                     <div class="card-title">${gate.name}</div>
                     <div class="card-status text-ok" id="status-${gate.id}">Wait...</div>
                     <canvas id="gauge-${gate.id}"></canvas>
@@ -303,22 +340,22 @@
             container.innerHTML += html;
         });
 
-        // ฟังก์ชันตั้งค่าหน้าปัดเกจ (ปรับสีแถบ Highlights ให้เข้มทึบ 100%)
-        function initGauge(elementId, size) {
+        // ฟังก์ชันตั้งค่า Gauge (Render High-Res ล่วงหน้า แล้วให้ CSS ย่อสเกลเพื่อความคมชัด)
+        function initGauge(elementId) {
             let el = document.getElementById(elementId);
             el.setAttribute('data-type', 'radial-gauge');
-            el.setAttribute('data-width', size); 
-            el.setAttribute('data-height', size);
+            el.setAttribute('data-width', '300'); // วาดความละเอียดสูง (300px) CSS จะบีบลงเอง
+            el.setAttribute('data-height', '300');
             el.setAttribute('data-min-value', '0');
             el.setAttribute('data-max-value', '10');
             el.setAttribute('data-major-ticks', '0,2,4,6,8,10');
             el.setAttribute('data-minor-ticks', '2');
             el.setAttribute('data-stroke-ticks', 'true');
-            // ปรับสีทึบ: แดง (#ef4444) และ เขียว (#10b981)
+            // สีแถบสถานะ (แดง = อันตราย, เขียว = ปกติ)
             el.setAttribute('data-highlights', '[ {"from": 0, "to": 4, "color": "#ef4444"}, {"from": 4, "to": 10, "color": "#10b981"} ]');
             el.setAttribute('data-color-plate', 'transparent');
-            el.setAttribute('data-color-major-ticks', '#64748b');
-            el.setAttribute('data-color-minor-ticks', '#64748b');
+            el.setAttribute('data-color-major-ticks', '#94a3b8');
+            el.setAttribute('data-color-minor-ticks', '#94a3b8');
             el.setAttribute('data-color-title', '#f8fafc');
             el.setAttribute('data-color-numbers', '#94a3b8');
             el.setAttribute('data-value-box', 'true');
@@ -328,11 +365,10 @@
             el.setAttribute('data-animation-duration', '500');
         }
 
-        // โหลดตั้งค่าเกจทั้งหมด
-        initGauge('gauge-av', '240');
-        gatesConfig.forEach(gate => initGauge(`gauge-${gate.id}`, '135'));
+        initGauge('gauge-av');
+        gatesConfig.forEach(gate => initGauge(`gauge-${gate.id}`));
 
-        // --- 3. MQTT Connection & Data Update ---
+        // --- 3. MQTT Connection & Live Updates ---
         const broker = "4d79d42984154e37aab32ca068370f40.s1.eu.hivemq.cloud";
         const port = 8884; 
         const topic = "factory/bagfilter/pressures";
@@ -344,7 +380,7 @@
         const mqttDot = document.getElementById("mqtt-dot");
         const mqttText = document.getElementById("mqtt-text");
 
-        client.onConnectionLost = function(res) {
+        client.onConnectionLost = function() {
             mqttDot.classList.remove("online");
             mqttText.innerText = "Offline - Reconnecting";
             setTimeout(connectMQTT, 5000);
@@ -354,37 +390,29 @@
             try {
                 const data = JSON.parse(message.payloadString);
                 
-                document.getElementById('gauge-av').setAttribute('data-value', data.av.toFixed(2));
-                const avStatus = document.getElementById('status-av');
-                if (data.av < 4) {
-                    avStatus.innerText = "Low Pressure";
-                    avStatus.className = "card-status text-err";
-                } else {
-                    avStatus.innerText = "System Normal";
-                    avStatus.className = "card-status text-ok";
-                }
-                
-                const updateGateUI = (id, val) => {
-                    document.getElementById(`gauge-${id}`).setAttribute('data-value', val);
-                    const card = document.getElementById(`card-${id}`);
+                // ฟังก์ชันอัพเดทค่าและสลับ UI แจ้งเตือน
+                const updateUI = (id, val, isMain = false) => {
+                    const prefix = isMain ? '' : 'card-';
+                    document.getElementById(`gauge-${id}`).setAttribute('data-value', val.toFixed(2));
+                    
+                    const card = document.getElementById(`${prefix}${id}`);
                     const statusText = document.getElementById(`status-${id}`);
                     
                     if (val < 4) {
-                        card.classList.add('alert');
+                        if(!isMain) card.classList.add('alert');
                         statusText.innerText = "Low Pressure";
                         statusText.className = "card-status text-err";
                     } else {
-                        card.classList.remove('alert');
+                        if(!isMain) card.classList.remove('alert');
                         statusText.innerText = "Normal";
                         statusText.className = "card-status text-ok";
                     }
                 };
 
-                gatesConfig.forEach((gate, idx) => {
-                    updateGateUI(gate.id, data[`p${idx+1}`]);
-                });
+                updateUI('av', data.av, true);
+                gatesConfig.forEach((gate, idx) => updateUI(gate.id, data[`p${idx+1}`]));
                 
-            } catch(e) { console.error("JSON Error:", e); }
+            } catch(e) { console.error("Data Parse Error:", e); }
         };
 
         function connectMQTT() {
@@ -400,7 +428,7 @@
         }
         connectMQTT();
 
-        // --- 4. กราฟ 48 ชั่วโมง (ดึงข้อมูลเตรียมไว้ก่อน) ---
+        // --- 4. ดึงข้อมูลประวัติ (Google Sheets) แบบ Background ---
         let globalHistory = [];
         const sheetURL = "https://script.google.com/macros/s/AKfycbwkMTHj9lhFm79HaQTtLE4tC77O1ILsmazRb6s5tPdamXZct9hlC7sEwc9Xb3l4XydN/exec";
 
@@ -412,7 +440,7 @@
         }
         fetchHistory(); 
 
-        // --- 5. จัดการแสดงผลกราฟใน Modal (Popup) ---
+        // --- 5. จัดการกราฟใน Popup Modal ---
         Chart.defaults.font.family = "'Inter', sans-serif";
         let chartInstance = null;
 
@@ -423,7 +451,7 @@
             modal.classList.add('show');
             
             if (globalHistory.length === 0) {
-                titleEl.innerText = "Loading data from database... Please wait.";
+                titleEl.innerText = "Loading data from Database... Please wait.";
                 return;
             }
             
