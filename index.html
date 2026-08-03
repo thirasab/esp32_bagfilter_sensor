@@ -123,7 +123,6 @@
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            /* ปรับ padding ให้เล็กลง เพื่อเพิ่มพื้นที่ให้ Gauge */
             padding: 1vh 1vw; min-height: 0; cursor: pointer;
         }
         .glass-card:hover { border-color: var(--accent-color); }
@@ -191,18 +190,16 @@
             .header { flex-direction: row; height: auto; margin-bottom: 1.5vh; }
             h1 { font-size: clamp(1rem, 2vh, 1.2rem); }
             .dashboard-main {
-                /* แบ่งพื้นที่แนวตั้ง: Main = ส่วนน้อย, Gates = ส่วนมาก */
                 grid-template-rows: 1fr 3.5fr; 
                 gap: 1vh;
             }
             .gates-panel {
-                /* ปรับเป็น 2 คอลัมน์ 4 แถว เพื่อให้เรียงแนวตั้งได้ขนาดใหญ่ขึ้น */
                 grid-template-columns: repeat(2, 1fr);
                 grid-template-rows: repeat(4, 1fr);
                 gap: 1vh;
             }
             .glass-card {
-                padding: 6px; /* บีบ Padding ให้เล็กที่สุด เพื่อขยายเกจ */
+                padding: 6px; 
             }
         }
 
@@ -240,6 +237,7 @@
     <header class="header">
         <div class="header-left">
             <div class="logo-box">
+                <!-- ดึงโลโก้ SCG จากโฟลเดอร์ใน GitHub -->
                 <img src="scg-logo.png" alt="SCG" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/SCG_logo.svg/512px-SCG_logo.svg.png'">
             </div>
             <h1>CM 10-11 Bag Filter</h1>
@@ -346,7 +344,6 @@
             container.innerHTML += html;
         });
 
-        // ฟังก์ชันตั้งค่าหน้าปัด (เรนเดอร์ขนาด 300 ให้ภาพคมชัด CSS จะย่อ/ขยายให้พอดีเอง)
         function initGauge(elementId) {
             let el = document.getElementById(elementId);
             el.setAttribute('data-type', 'radial-gauge');
