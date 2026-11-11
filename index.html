@@ -70,14 +70,14 @@
     </div>
 
     <script>
-        // ตั้งค่าเชื่อมต่อ HiveMQ Cloud (ใช้ TLS Websocket Port 8884 จากคลัสเตอร์ของคุณ)
-        const brokerUrl = 'wss://9b6eccbae99e46648ce3815da10dd376.s1.eu.hivemq.cloud:8884/mqtt';
+        // ตั้งค่าเชื่อมต่อ HiveMQ Cloud (ใช้ TLS Websocket Port 8884)
+        const brokerUrl = 'wss://da20fee687434cce93e355ebceb7da00.s2.eu.hivemq.cloud:8884/mqtt';
         const topic = 'scg/cement/environment_monitoring';
 
         const options = {
             clientId: 'web_client_' + Math.random().toString(16).substring(2, 8),
-            username: 'esp32_sensorMonitor', // ใส่ Username ที่สร้างจากเมนู Access Management ใน HiveMQ
-            password: 'Mcl195088', // ใส่ Password ที่สร้างจากเมนู Access Management ใน HiveMQ
+            username: 'esp32_sensorMonitor', 
+            password: 'Mcl195088', 
             clean: true
         };
 
