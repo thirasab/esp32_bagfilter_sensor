@@ -1,123 +1,524 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCG Cement Plant - Environmental Monitoring</title>
-    <!-- โหลด MQTT Library ผ่าน CDN -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/4.3.7/mqtt.min.js"></script>
-    <!-- Tailwind CSS สำหรับจัดแต่งหน้าเว็บ -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>CM 10-11 Bag Filter Dashboard</title>
+    
+    <!-- ฟอนต์ Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- ไลบรารี -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.rawgit.com/Mikhus/canvas-gauges/gh-pages/download/2.1.7/radial/gauge.min.js"></script>
+
     <style>
-        .map-container {
-            position: relative;
-            display: inline-block;
+        /* =========================================
+           1. Design Tokens & Themes
+           ========================================= */
+        :root {
+            /* Dark Mode */
+            --bg-page: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --accent-color: #38bdf8;
+            --status-ok: #10b981;
+            --status-error: #ef4444;
         }
-        /* ตำแหน่งจุดป้ายแสดงผล (ปรับค่า top และ left เป็นเปอร์เซ็นต์ % ตามจุดสีแดงในรูปของคุณ) */
-        .sensor-badge {
-            position: absolute;
-            transform: translate(-50%, -50%);
-            transition: all 0.3s ease;
+
+        [data-theme="light"] {
+            /* Light Mode */
+            --bg-page: #f1f5f9;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(0, 0, 0, 0.15);
+            --text-main: #0f172a;
+            --text-sub: #475569;
+            --accent-color: #0284c7;
         }
+
+        /* =========================================
+           2. Global Reset & Base
+           ========================================= */
+        * { box-sizing: border-box; transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-page); 
+            color: var(--text-main);
+            margin: 0; 
+            height: 100dvh; 
+            width: 100vw;
+            padding: 1.5vh 1.5vw;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+            background-image: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.05) 0%, transparent 50%);
+        }
+        
+        /* =========================================
+           3. Header Section 
+           ========================================= */
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            height: 8vh; min-height: 45px; margin-bottom: 1vh; flex-shrink: 0;
+        }
+        
+        .header-left { display: flex; align-items: center; gap: 1vw; }
+        
+        .logo-box {
+            background: #fff; padding: 0.5vh 0.8vw; border-radius: 8px; 
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .logo-box img { height: clamp(20px, 3vh, 35px); width: auto; object-fit: contain; }
+        
+        h1 { margin: 0; font-size: clamp(1.2rem, 2.2vh, 1.8rem); font-weight: 700; letter-spacing: -0.5px; }
+        
+        .header-right { display: flex; align-items: center; gap: 1vw; }
+
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: var(--glass-bg); padding: 0.8vh 1.2vw; 
+            border-radius: 30px; font-size: clamp(0.7rem, 1.5vh, 0.9rem); font-weight: 600;
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+        }
+        
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background-color: var(--status-error); }
+        .status-dot.online { background-color: var(--status-ok); box-shadow: 0 0 10px var(--status-ok); animation: pulse 2s infinite; }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+            70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .theme-btn {
+            background: var(--glass-bg); color: var(--text-main);
+            border: 1px solid var(--glass-border); border-radius: 50%;
+            width: clamp(35px, 4.5vh, 45px); height: clamp(35px, 4.5vh, 45px); 
+            cursor: pointer; font-size: 1.2rem;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(10px); box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .theme-btn:hover { transform: scale(1.1); }
+
+        /* =========================================
+           4. Main Dashboard Grid 
+           ========================================= */
+        .dashboard-main {
+            display: grid;
+            grid-template-columns: 3fr 7fr;
+            gap: 1vw;
+            flex-grow: 1;
+            min-height: 0; 
+        }
+        
+        .glass-card {
+            background: var(--glass-bg); border-radius: 16px; 
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.15);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            /* ปรับ padding ให้เล็กลง เพื่อเพิ่มพื้นที่ให้ Gauge */
+            padding: 1vh 1vw; min-height: 0; cursor: pointer;
+        }
+        .glass-card:hover { border-color: var(--accent-color); }
+
+        /* กล่องคุมความสูง Canvas ให้ขยายเต็ม 100% */
+        .gauge-wrapper {
+            flex-grow: 1; width: 100%; height: 100%; min-height: 0;
+            display: flex; align-items: center; justify-content: center;
+            overflow: hidden;
+        }
+        
+        /* บังคับให้ Canvas ขยายตัวเต็มกล่อง แต่รักษาสัดส่วน */
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100% !important;
+            max-height: 100% !important;
+            object-fit: contain;
+        }
+
+        .card-title {
+            font-size: clamp(0.75rem, 1.8vh, 1.1rem); font-weight: 700; color: var(--accent-color); 
+            text-transform: uppercase; margin-bottom: 2px; text-align: center;
+        }
+        .card-status { 
+            font-size: clamp(0.65rem, 1.5vh, 0.9rem); font-weight: 600; 
+            margin-bottom: 5px; text-align: center; 
+        }
+        
+        .text-ok { color: var(--status-ok); }
+        .text-err { color: var(--status-error); }
+
+        /* โซนขวา: 8 Gates */
+        .gates-panel {
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr); 
+            gap: 1vh 1vw; min-height: 0;
+        }
+
+        .alert { animation: borderGlow 1.5s ease-in-out infinite; }
+        @keyframes borderGlow {
+            0% { border-color: rgba(239, 68, 68, 0.5); box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
+            50% { border-color: var(--status-error); box-shadow: 0 0 15px rgba(239, 68, 68, 0.6); }
+            100% { border-color: rgba(239, 68, 68, 0.5); box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
+        }
+
+        /* =========================================
+           5. Responsive Breakpoints (Tablet & Mobile)
+           ========================================= */
+        @media (max-width: 1024px) {
+            body { padding: 1.5vh 2vw; }
+            .dashboard-main {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1.2fr 3fr; 
+                gap: 1.5vh;
+            }
+            .gates-panel {
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header { flex-direction: row; height: auto; margin-bottom: 1.5vh; }
+            h1 { font-size: clamp(1rem, 2vh, 1.2rem); }
+            .dashboard-main {
+                /* แบ่งพื้นที่แนวตั้ง: Main = ส่วนน้อย, Gates = ส่วนมาก */
+                grid-template-rows: 1fr 3.5fr; 
+                gap: 1vh;
+            }
+            .gates-panel {
+                /* ปรับเป็น 2 คอลัมน์ 4 แถว เพื่อให้เรียงแนวตั้งได้ขนาดใหญ่ขึ้น */
+                grid-template-columns: repeat(2, 1fr);
+                grid-template-rows: repeat(4, 1fr);
+                gap: 1vh;
+            }
+            .glass-card {
+                padding: 6px; /* บีบ Padding ให้เล็กที่สุด เพื่อขยายเกจ */
+            }
+        }
+
+        /* =========================================
+           6. Modal Chart
+           ========================================= */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+            z-index: 1000; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal.show { display: flex; opacity: 1; }
+        
+        .modal-content {
+            background: var(--bg-page); width: 90vw; max-width: 1000px; height: 70vh;
+            border-radius: 20px; padding: 2.5vh 2vw; border: 1px solid var(--glass-border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            display: flex; flex-direction: column; position: relative;
+            transform: scale(0.95); transition: transform 0.3s ease;
+        }
+        .modal.show .modal-content { transform: scale(1); }
+        
+        .close-btn {
+            position: absolute; top: 2vh; right: 3vw; font-size: 2.5rem; color: var(--text-sub);
+            cursor: pointer; background: none; border: none; padding: 0; line-height: 1;
+        }
+        .close-btn:hover { color: var(--status-error); }
+        .chart-wrapper { position: relative; flex-grow: 1; width: 100%; min-height: 0; margin-top: 2vh; }
     </style>
 </head>
-<body class="bg-slate-900 text-white font-sans min-h-screen flex flex-col items-center p-4">
+<body>
 
-    <header class="mb-4 text-center">
-        <h1 class="text-2xl font-bold text-emerald-400">SCG Cement Mill - IoT Environmental Monitoring</h1>
-        <p class="text-sm text-slate-400" id="connection-status">Connecting to HiveMQ Cloud...</p>
+    <!-- Header Section -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo-box">
+                <img src="scg-logo.png" alt="SCG" onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/SCG_logo.svg/512px-SCG_logo.svg.png'">
+            </div>
+            <h1>CM 10-11 Bag Filter</h1>
+        </div>
+        
+        <div class="header-right">
+            <div class="status-badge">
+                <div class="status-dot" id="mqtt-dot"></div>
+                <span id="mqtt-text">Connecting...</span>
+            </div>
+            <button class="theme-btn" onclick="toggleTheme()" title="Switch Theme">☀️</button>
+        </div>
     </header>
 
-    <!-- พื้นหลังแผนที่โรงงาน (ตั้งชื่อไฟล์รูปใน GitHub เป็น map-bg.jpg) -->
-    <div class="map-container shadow-2xl rounded-xl overflow-hidden border border-slate-700">
-        <img src="map-bg.jpg" alt="Plant Map" class="max-w-full h-auto block">
-
-        <!-- 
-          จุดแสดงผลเซนเซอร์ (พิกัด Top / Left เป็นเปอร์เซ็นต์จากภาพแผนที่ของคุณ)
-          คุณสามารถปรับตัวเลข style="top: Y%; left: X%;" ให้ตรงกับจุดสีแดงในแผนที่เป๊ะๆ ได้ครับ
-        -->
-
-        <!-- จุดที่ 1: Temp & Humidity (ID 1) -->
-        <div class="sensor-badge bg-slate-900/90 border border-emerald-500 rounded-lg p-2 shadow-lg text-xs" style="top: 75%; left: 27%;">
-            <div class="font-bold text-emerald-300 border-b border-slate-700 pb-1 mb-1">📍 จุดที่ 1 (ENV)</div>
-            <div>🌡️ <span id="val-temp">--</span> °C</div>
-            <div>💧 <span id="val-hum">--</span> %RH</div>
+    <!-- Main Dashboard Area -->
+    <main class="dashboard-main">
+        
+        <!-- Left: Main Header Pressure -->
+        <div class="glass-card" onclick="openChartModal('av', 'Main Header (AV)', '#38bdf8')">
+            <div class="card-title">Main Header</div>
+            <div class="card-status text-ok" id="status-av">System Normal</div>
+            <div class="gauge-wrapper">
+                <canvas id="gauge-av"></canvas>
+            </div>
         </div>
 
-        <!-- จุดที่ 2: Noise 1 (ID 2) -->
-        <div class="sensor-badge bg-slate-900/90 border border-blue-500 rounded-lg p-2 shadow-lg text-xs" style="top: 57%; left: 38%;">
-            <div class="font-bold text-blue-300 border-b border-slate-700 pb-1 mb-1">🔊 Noise 1 (ID 2)</div>
-            <div>📢 <span id="val-noise1">--</span> dB</div>
+        <!-- Right: 8 Gates Grid -->
+        <div class="gates-panel" id="gates-container">
+            <!-- JavaScript จะสร้าง HTML ให้อัตโนมัติ -->
         </div>
 
-        <!-- จุดที่ 3: Noise 2 (ID 3) -->
-        <div class="sensor-badge bg-slate-900/90 border border-blue-500 rounded-lg p-2 shadow-lg text-xs" style="top: 44%; left: 52%;">
-            <div class="font-bold text-blue-300 border-b border-slate-700 pb-1 mb-1">🔊 Noise 2 (ID 3)</div>
-            <div>📢 <span id="val-noise2">--</span> dB</div>
-        </div>
+    </main>
 
-        <!-- จุดที่ 4: Noise 3 (ID 4) -->
-        <div class="sensor-badge bg-slate-900/90 border border-blue-500 rounded-lg p-2 shadow-lg text-xs" style="top: 19%; left: 63%;">
-            <div class="font-bold text-blue-300 border-b border-slate-700 pb-1 mb-1">🔊 Noise 3 (ID 4)</div>
-            <div>📢 <span id="val-noise3">--</span> dB</div>
-        </div>
-
-        <!-- จุดที่ 5: Noise 4 (ID 5) -->
-        <div class="sensor-badge bg-slate-900/90 border border-blue-500 rounded-lg p-2 shadow-lg text-xs" style="top: 10%; left: 78%;">
-            <div class="font-bold text-blue-300 border-b border-slate-700 pb-1 mb-1">🔊 Noise 4 (ID 5)</div>
-            <div>📢 <span id="val-noise4">--</span> dB</div>
+    <!-- Modal Chart -->
+    <div class="modal" id="chartModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-btn" onclick="closeModal(event)">&times;</button>
+            <div class="card-title" id="modalTitle" style="font-size: clamp(1rem, 2.5vh, 1.5rem);">Loading History...</div>
+            <div class="chart-wrapper">
+                <canvas id="historyChart"></canvas>
+            </div>
         </div>
     </div>
 
+    <!-- =========================================
+         JavaScript Logic
+         ========================================= -->
     <script>
-        // ตั้งค่าเชื่อมต่อ HiveMQ Cloud (ใช้ TLS Websocket Port 8884)
-        const brokerUrl = 'wss://da20fee687434cce93e355ebceb7da00.s2.eu.hivemq.cloud:8884/mqtt';
-        const topic = 'scg/cement/environment_monitoring';
+        // --- 1. จัดการ Dark / Light Mode ---
+        let currentTheme = 'dark';
+        
+        function toggleTheme() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            document.querySelector('.theme-btn').innerText = currentTheme === 'dark' ? '☀️' : '🌙';
+            
+            const isLight = currentTheme === 'light';
+            const titleColor = isLight ? '#0f172a' : '#f8fafc';
+            const numColor = isLight ? '#475569' : '#94a3b8';
+            const tickColor = isLight ? '#94a3b8' : '#64748b';
 
-        const options = {
-            clientId: 'web_client_' + Math.random().toString(16).substring(2, 8),
-            username: 'esp32_sensorMonitor', 
-            password: 'Mcl195088', 
-            clean: true
+            document.gauges.forEach(gauge => {
+                gauge.update({
+                    colorTitle: titleColor,
+                    colorNumbers: numColor,
+                    colorMajorTicks: tickColor,
+                    colorMinorTicks: tickColor,
+                    colorValueText: titleColor
+                });
+            });
+
+            if (chartInstance) {
+                const gridColor = isLight ? '#e2e8f0' : 'rgba(255,255,255,0.05)';
+                chartInstance.options.scales.x.grid.color = gridColor;
+                chartInstance.options.scales.y.grid.color = gridColor;
+                chartInstance.update();
+            }
+        }
+
+        // --- 2. ฟังก์ชันสร้าง Gauge อัตโนมัติ ---
+        const gatesConfig = [
+            { id: 'p1', name: '6526.04', color: '#38bdf8' },
+            { id: 'p2', name: '6524.041', color: '#38bdf8' },
+            { id: 'p3', name: '6526.08', color: '#38bdf8' },
+            { id: 'p4', name: '6536.04', color: '#38bdf8' },
+            { id: 'p5', name: '6536.041', color: '#38bdf8' },
+            { id: 'p6', name: '6536.08', color: '#38bdf8' },
+            { id: 'p7', name: '6511.76', color: '#38bdf8' },
+            { id: 'p8', name: '6511.80', color: '#38bdf8' }
+        ];
+
+        const container = document.getElementById('gates-container');
+        
+        gatesConfig.forEach((gate) => {
+            const html = `
+                <div class="glass-card" id="card-${gate.id}" onclick="openChartModal('${gate.id}', 'Gate ${gate.name}', '${gate.color}')">
+                    <div class="card-title">${gate.name}</div>
+                    <div class="card-status text-ok" id="status-${gate.id}">Wait...</div>
+                    <div class="gauge-wrapper">
+                        <canvas id="gauge-${gate.id}"></canvas>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += html;
+        });
+
+        // ฟังก์ชันตั้งค่าหน้าปัด (เรนเดอร์ขนาด 300 ให้ภาพคมชัด CSS จะย่อ/ขยายให้พอดีเอง)
+        function initGauge(elementId) {
+            let el = document.getElementById(elementId);
+            el.setAttribute('data-type', 'radial-gauge');
+            el.setAttribute('data-width', '300'); 
+            el.setAttribute('data-height', '300');
+            el.setAttribute('data-min-value', '0');
+            el.setAttribute('data-max-value', '10');
+            el.setAttribute('data-major-ticks', '0,2,4,6,8,10');
+            el.setAttribute('data-minor-ticks', '2');
+            el.setAttribute('data-stroke-ticks', 'true');
+            el.setAttribute('data-highlights', '[ {"from": 0, "to": 4, "color": "#ef4444"}, {"from": 4, "to": 10, "color": "#10b981"} ]');
+            el.setAttribute('data-color-plate', 'transparent');
+            el.setAttribute('data-color-major-ticks', '#64748b');
+            el.setAttribute('data-color-minor-ticks', '#64748b');
+            el.setAttribute('data-color-title', '#f8fafc');
+            el.setAttribute('data-color-numbers', '#94a3b8');
+            el.setAttribute('data-value-box', 'true');
+            el.setAttribute('data-color-value-box-rect', 'transparent');
+            el.setAttribute('data-color-value-text', '#f8fafc');
+            el.setAttribute('data-animation-rule', 'bounce'); 
+            el.setAttribute('data-animation-duration', '500');
+        }
+
+        initGauge('gauge-av');
+        gatesConfig.forEach(gate => initGauge(`gauge-${gate.id}`));
+
+        // --- 3. MQTT Connection ---
+        const broker = "4d79d42984154e37aab32ca068370f40.s1.eu.hivemq.cloud";
+        const port = 8884; 
+        const topic = "factory/bagfilter/pressures";
+        const clientId = "WebClient-UI-" + Math.random().toString(16).substr(2, 8);
+        const mqtt_user = "esp32_bagfilter_sensor";
+        const mqtt_password = "Mcl195088";
+
+        const client = new Paho.MQTT.Client(broker, port, clientId);
+        const mqttDot = document.getElementById("mqtt-dot");
+        const mqttText = document.getElementById("mqtt-text");
+
+        client.onConnectionLost = function() {
+            mqttDot.classList.remove("online");
+            mqttText.innerText = "Offline - Retry...";
+            setTimeout(connectMQTT, 5000);
         };
 
-        const client = mqtt.connect(brokerUrl, options);
-
-        const statusEl = document.getElementById('connection-status');
-        const tempEl = document.getElementById('val-temp');
-        const humEl = document.getElementById('val-hum');
-        const noise1El = document.getElementById('val-noise1');
-        const noise2El = document.getElementById('val-noise2');
-        const noise3El = document.getElementById('val-noise3');
-        const noise4El = document.getElementById('val-noise4');
-
-        client.on('connect', () => {
-            statusEl.textContent = 'Status: Connected (Live Data)';
-            statusEl.classList.remove('text-slate-400');
-            statusEl.classList.add('text-emerald-400');
-            client.subscribe(topic);
-        });
-
-        client.on('error', (err) => {
-            statusEl.textContent = 'Connection Error: ' + err;
-            statusEl.classList.add('text-red-400');
-        });
-
-        client.on('message', (t, payload) => {
-            if (t === topic) {
-                try {
-                    const data = JSON.parse(payload.toString());
-                    tempEl.textContent = data.temperature.toFixed(1);
-                    humEl.textContent = data.humidity.toFixed(1);
-                    noise1El.textContent = data.noise1.toFixed(1);
-                    noise2El.textContent = data.noise2.toFixed(1);
-                    noise3El.textContent = data.noise3.toFixed(1);
-                    noise4El.textContent = data.noise4.toFixed(1);
-                } catch (e) {
-                    console.error('Parse JSON error:', e);
+        client.onMessageArrived = function(message) {
+            try {
+                const data = JSON.parse(message.payloadString);
+                
+                // อัพเดท Main AV
+                document.getElementById('gauge-av').setAttribute('data-value', data.av.toFixed(2));
+                const avStatus = document.getElementById('status-av');
+                if (data.av < 4) {
+                    avStatus.innerText = "Low Pressure";
+                    avStatus.className = "card-status text-err";
+                    document.getElementById('gauge-av').parentElement.parentElement.classList.add('alert');
+                } else {
+                    avStatus.innerText = "System Normal";
+                    avStatus.className = "card-status text-ok";
+                    document.getElementById('gauge-av').parentElement.parentElement.classList.remove('alert');
                 }
+                
+                // อัพเดท Gate ทั้ง 8
+                const updateGateUI = (id, val) => {
+                    document.getElementById(`gauge-${id}`).setAttribute('data-value', val);
+                    const card = document.getElementById(`card-${id}`);
+                    const statusText = document.getElementById(`status-${id}`);
+                    
+                    if (val < 4) {
+                        card.classList.add('alert');
+                        statusText.innerText = "Low Pressure";
+                        statusText.className = "card-status text-err";
+                    } else {
+                        card.classList.remove('alert');
+                        statusText.innerText = "Normal";
+                        statusText.className = "card-status text-ok";
+                    }
+                };
+
+                gatesConfig.forEach((gate, idx) => {
+                    updateGateUI(gate.id, data[`p${idx+1}`]);
+                });
+                
+            } catch(e) { console.error(e); }
+        };
+
+        function connectMQTT() {
+            client.connect({
+                userName: mqtt_user, password: mqtt_password, useSSL: true,
+                onSuccess: function() {
+                    mqttDot.classList.add("online");
+                    mqttText.innerText = "Live Connected";
+                    client.subscribe(topic);
+                },
+                onFailure: function() { setTimeout(connectMQTT, 5000); }
+            });
+        }
+        connectMQTT();
+
+        // --- 4. ดึงข้อมูล 48 ชม. สำหรับกราฟ ---
+        let globalHistory = [];
+        const sheetURL = "https://script.google.com/macros/s/AKfycbwkMTHj9lhFm79HaQTtLE4tC77O1ILsmazRb6s5tPdamXZct9hlC7sEwc9Xb3l4XydN/exec";
+
+        async function fetchHistory() {
+            try {
+                const res = await fetch(sheetURL);
+                globalHistory = await res.json();
+            } catch (err) {}
+        }
+        fetchHistory(); 
+
+        // --- 5. Chart Modal Logic ---
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        let chartInstance = null;
+
+        function openChartModal(dataKey, title, colorCode) {
+            const modal = document.getElementById('chartModal');
+            const titleEl = document.getElementById('modalTitle');
+            
+            modal.classList.add('show');
+            
+            if (globalHistory.length === 0) {
+                titleEl.innerText = "Loading data from database... Please wait.";
+                return;
             }
-        });
+            
+            titleEl.innerText = `${title} - 48 Hours Trend`;
+            
+            const labels = globalHistory.map(r => r.time);
+            const dataset = globalHistory.map(r => r[dataKey]);
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            
+            if (chartInstance) chartInstance.destroy();
+
+            const isLight = currentTheme === 'light';
+            const gridColor = isLight ? '#e2e8f0' : 'rgba(255,255,255,0.05)';
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pressure (Bar)',
+                        data: dataset,
+                        borderColor: colorCode,
+                        backgroundColor: colorCode + '20', 
+                        borderWidth: 2,
+                        fill: true,
+                        pointRadius: 0, 
+                        pointHoverRadius: 6,
+                        tension: 0.4 
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        x: { grid: { display: false } },
+                        y: { 
+                            min: 0, max: 10,
+                            grid: { color: gridColor },
+                            title: { display: true, text: 'Pressure (Bar)' }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function closeModal(e) {
+            if(e) e.stopPropagation();
+            document.getElementById('chartModal').classList.remove('show');
+        }
     </script>
 </body>
 </html>
